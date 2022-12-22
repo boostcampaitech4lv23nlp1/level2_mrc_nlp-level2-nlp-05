@@ -142,6 +142,11 @@ def run_mrc(
         # True일 경우 : run passage retrieval
         if data_args.eval_retrieval:
             # Evaluate
+            training_dir = training_args.output_dir
+            eval_dir = os.path.join(training_dir, "eval")
+            os.makedirs(eval_dir)
+            training_args.output_dir = eval_dir
+
             logger.info("*** Evaluate ***")
             metrics = trainer.evaluate(eval_dataset)
             metrics["eval_samples"] = len(eval_dataset)
@@ -149,12 +154,16 @@ def run_mrc(
             trainer.save_metrics("eval", metrics)
 
             test_datasets = load_from_disk('./dataset/test_dataset/')
+
+            # Predict            
+            predict_dir = os.path.join(training_dir, "pred")
+            os.makedirs(predict_dir)
+            training_args.output_dir = predict_dir
             predict_datasets = run_sparse_retrieval(
                 tokenizer.tokenize, test_datasets, training_args, data_args,
             )
             predict_dataset = load_eval_dataset(predict_datasets, max_seq_length, data_args, tokenizer)
 
-            # Predict
             logger.info("*** Predict ***")
             predictions = trainer.predict(
                 test_dataset=predict_dataset, test_examples=predict_datasets["validation"]
