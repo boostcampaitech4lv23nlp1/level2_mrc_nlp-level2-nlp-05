@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+from datetime import datetime
 from typing import NoReturn
 
 from arguments import DataTrainingArguments, ModelArguments
@@ -24,6 +25,8 @@ logger = logging.getLogger(__name__)
 def main():
     # 가능한 arguments 들은 ./arguments.py 나 transformer package 안의 src/transformers/training_args.py 에서 확인 가능합니다.
     # --help flag 를 실행시켜서 확인할 수 도 있습니다.
+    now = datetime.now()
+    train_start_time = now.strftime("%d-%H-%M")
 
     parser = HfArgumentParser(
         (ModelArguments, DataTrainingArguments, TrainingArguments)
@@ -34,6 +37,15 @@ def main():
     # [참고] argument를 manual하게 수정하고 싶은 경우에 아래와 같은 방식을 사용할 수 있습니다
     # training_args.per_device_train_batch_size = 4
     # print(training_args.per_device_train_batch_size)
+    training_args.output_dir = os.path.join(training_args.output_dir, f"{train_start_time}")
+    training_args.logging_dir="./logs",
+    training_args.per_device_train_batch_size = 16
+    training_args.per_device_eval_batch_size = 16
+    training_args.save_total_limit = 2
+    training_args.load_best_model_at_end = True
+    training_args.num_train_epochs = 1
+    training_args.eval_steps = 250
+    training_args.evaluation_strategy = "steps"
 
     print(f"model is from {model_args.model_name_or_path}")
     print(f"data is from {data_args.dataset_name}")

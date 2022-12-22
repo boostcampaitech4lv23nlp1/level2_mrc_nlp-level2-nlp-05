@@ -33,7 +33,6 @@ from transformers import (
     set_seed,
 )
 from utils.utils_qa import check_no_error, postprocess_qa_predictions
-from train import run_mrc
 
 logger = logging.getLogger(__name__)
 
