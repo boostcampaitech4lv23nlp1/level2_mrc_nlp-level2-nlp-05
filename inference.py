@@ -21,7 +21,7 @@ from datasets import (
     load_metric,
 )
 from retrieval import SparseRetrieval
-from trainer_qa import QuestionAnsweringTrainer
+from trainer.trainer_qa import QuestionAnsweringTrainer
 from transformers import (
     AutoConfig,
     AutoModelForQuestionAnswering,
@@ -32,7 +32,7 @@ from transformers import (
     TrainingArguments,
     set_seed,
 )
-from utils_qa import check_no_error, postprocess_qa_predictions
+from utils.utils_qa import check_no_error, postprocess_qa_predictions
 from train import run_mrc
 
 logger = logging.getLogger(__name__)

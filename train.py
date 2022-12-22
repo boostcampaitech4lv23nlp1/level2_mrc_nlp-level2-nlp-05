@@ -5,7 +5,7 @@ from typing import NoReturn
 
 from arguments import DataTrainingArguments, ModelArguments
 from datasets import DatasetDict, load_from_disk, load_metric
-from trainer_qa import QuestionAnsweringTrainer
+from trainer.trainer_qa import QuestionAnsweringTrainer
 from transformers import (
     AutoConfig,
     AutoModelForQuestionAnswering,
@@ -16,7 +16,7 @@ from transformers import (
     TrainingArguments,
     set_seed,
 )
-from utils_qa import check_no_error, postprocess_qa_predictions
+from utils.utils_qa import check_no_error, postprocess_qa_predictions
 
 logger = logging.getLogger(__name__)
 

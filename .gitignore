@@ -1,3 +1,4 @@
 *.pyc
 *.arrow
 *.bin
+dataset/wikipedia_documents.json
