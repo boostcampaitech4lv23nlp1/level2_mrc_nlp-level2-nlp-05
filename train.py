@@ -3,9 +3,9 @@ import os
 import sys
 from datetime import datetime
 from typing import NoReturn
-import argpar
+import argparse
 
-from arguments import DataTrainingArguments, ModelArguments, TrainingArguments
+from arguments import DataTrainingArguments, ModelArguments
 from datasets import DatasetDict, load_from_disk, load_metric
 from trainer.trainer_qa import QuestionAnsweringTrainer
 from transformers import (
@@ -15,25 +15,26 @@ from transformers import (
     DataCollatorWithPadding,
     EvalPrediction,
     HfArgumentParser,
+    TrainingArguments,
     set_seed,
 )
 from utils.utils_qa import check_no_error, postprocess_qa_predictions
 from data_loaders.data_loader import load_train_dataset, load_eval_dataset
 from run_mrc import run_mrc
 from run_sparse_retrieval import run_sparse_retrieval
+from omegaconf import OmegaConf
 
 logger = logging.getLogger(__name__)
 
 
-def main():
+def main(model_args, data_args, training_args):
 
     # Set current time
     now = datetime.now()
     train_start_time = now.strftime("%d-%H-%M")
 
-    # Receive Arguments
-    parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments))
-    model_args, data_args, training_args = parser.parse_args_into_dataclasses()
+    # Redefine training arguments
+    training_args = TrainingArguments(**training_args)
 
     # Set Loggin & verbosity
     logging.basicConfig(
@@ -67,18 +68,10 @@ def main():
         config=config,
     )
 
-    # Print Training Environment
-    # print(
-    #     type(training_args),
-    #     type(model_args),
-    #     type(datasets),
-    #     type(tokenizer),
-    #     type(model),
-    # )
-
-    # print(model_args.model_name_or_path)
+    # print training configuration
     print(f"model is from {model_args.model_name_or_path}")
     print(f"data is from {data_args.dataset_name}")
+    print(datasets)
 
     # do_train mrc model 혹은 do_eval mrc model
     if training_args.do_train or training_args.do_eval:
@@ -87,10 +80,9 @@ def main():
 
 if __name__ == "__main__":
 
-    parser = argparser.ArgumentParser()
+    parser = argparse.ArgumentParser()
     parser.add_argument('--config', type=str, default='')
     args, _ = parser.parse_known_args()
-
     cfg = OmegaConf.load(f'./config/{args.config}.yaml')
-    
-    main()
+
+    main(cfg.model_args, cfg.data_args, cfg.training_args)

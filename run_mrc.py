@@ -144,7 +144,7 @@ def run_mrc(
             # Evaluate
             training_dir = training_args.output_dir
             eval_dir = os.path.join(training_dir, "eval")
-            os.makedirs(eval_dir)
+            if not os.path.exists(eval_dir): os.makedirs(eval_dir)
             training_args.output_dir = eval_dir
 
             logger.info("*** Evaluate ***")
