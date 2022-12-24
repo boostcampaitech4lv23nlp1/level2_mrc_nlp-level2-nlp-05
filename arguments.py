@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Optional
 
+from transformers import TrainingArguments
 
 @dataclass
 class ModelArguments:
@@ -90,3 +91,62 @@ class DataTrainingArguments:
     use_faiss: bool = field(
         default=False, metadata={"help": "Whether to build with faiss"}
     )
+
+@dataclass
+class TrainingArguments(TrainingArguments):
+
+    output_dir: str = field(
+        default='.model/train_dataset', metadata={"help": "Saved result path"}
+    )
+    
+    logging_dir: str = field(
+        default='./logs', metadata={"help": "Logging directory path"}
+    )
+
+    per_device_train_batch_size : int = field(
+        default=16, metadata={"help": "Train batch size per device"}
+    )
+
+    per_device_eval_batch_size : int = field(
+        default=16, metadata={"help": "Eval batch size per device"}
+    )
+
+    save_total_limit : int = field(
+        default=2, metadata={"help": "limitation of number of saved file"}
+    )
+
+    load_best_model_at_end : bool = field(
+        default=True, metadata = {"help": "Load best model at end"}
+    )
+
+    num_train_epochs : int = field(
+        default=1, metadata = {"help": "Train epochs"}
+    )
+
+    eval_steps : int = field(
+        default=250, metadata = {"help" : "Number of evaluation step"}
+    )
+
+    evaluation_strategy : str = field(
+        default='steps', metadata = {"help" : "evaluation strategy"}
+    )
+
+    overwrite_output_dir : bool = field(
+        default=True, metadata = {"help" : "Whether overwrite output_dir when output_dir already exist"}
+    )
+
+    # 가능한 arguments 들은 ./arguments.py 나 transformer package 안의 src/transformers/training_args.py 에서 확인 가능합니다.
+    # --help flag 를 실행시켜서 확인할 수 도 있습니다.
+    
+    # [참고] argument를 manual하게 수정하고 싶은 경우에 아래와 같은 방식을 사용할 수 있습니다
+    # training_args.per_device_train_batch_size = 4
+    # print(training_args.per_device_train_batch_size)
+    # training_args.output_dir = os.path.join(training_args.output_dir, f"{train_start_time}")
+    # training_args.logging_dir="./logs",
+    # training_args.per_device_train_batch_size = 16
+    # training_args.per_device_eval_batch_size = 16
+    # training_args.save_total_limit = 2
+    # training_args.load_best_model_at_end = True
+    # training_args.num_train_epochs = 1
+    # training_args.eval_steps = 250
+    # training_args.evaluation_strategy = "steps"
