@@ -17,7 +17,7 @@ data_args:
   use_faiss : False
 
 training_args:
-  output_dir: '.model/train_dataset'
+  output_dir: './models/train_dataset'
   logging_dir: './logs'
   per_device_train_batch_size : 16
   per_device_eval_batch_size : 16
@@ -27,6 +27,9 @@ training_args:
   eval_steps : 250
   evaluation_strategy : 'steps'
   overwrite_output_dir : True
-  do_train : True
-  do_eval : False # 이거 근데 False라고 박아놧는데 자꾸 True로 들어감.. 왜일까
-  do_predict : False
+  do_train : False 
+  do_eval : False 
+  # do_eval 근데 False라고 박아놧는데 자꾸 True로 들어감.. 왜일까
+  # evaluation strategy가 설정되어있으면 알아서 True로 들어간다고 함
+  # 추후에 inference용 config 파일이 필요할듯
+  do_predict : True
