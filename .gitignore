@@ -2,3 +2,5 @@
 *.arrow
 *.bin
 dataset/wikipedia_documents.json
+models/*
+outputs/*

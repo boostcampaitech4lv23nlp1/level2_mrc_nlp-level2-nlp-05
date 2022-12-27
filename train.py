@@ -99,8 +99,12 @@ def main():
         type(model),
     )
 
+    print("train:", training_args.do_train)
+    print("eval:", training_args.do_eval)
+    print("predict:", training_args.do_predict)
     # do_train mrc model 혹은 do_eval mrc model
-    if training_args.do_train or training_args.do_eval:
+    if training_args.do_train or training_args.do_eval or training_args.do_predict:
+        print("run_mrc...")
         run_mrc(data_args, training_args, model_args, datasets, tokenizer, model)
 
 
