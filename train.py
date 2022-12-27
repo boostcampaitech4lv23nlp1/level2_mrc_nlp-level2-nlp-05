@@ -37,8 +37,6 @@ def main(model_args, data_args, training_args):
     training_args = TrainingArguments(**training_args)
     training_args.output_dir = os.path.join(training_args.output_dir, f"{train_start_time}")
 
-    print(training_args.output_dir)
-    breakpoint()
     # Set Loggin & verbosity
     logging.basicConfig(
         format="%(asctime)s - %(levelname)s - %(name)s -    %(message)s",
