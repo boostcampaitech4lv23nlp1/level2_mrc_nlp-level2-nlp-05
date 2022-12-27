@@ -1,5 +1,6 @@
 *.pyc
 *.bin
-/models/*
 cache*
 wandb
+models/*
+outputs/*

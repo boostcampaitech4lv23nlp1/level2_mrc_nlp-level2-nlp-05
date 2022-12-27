@@ -175,21 +175,36 @@ def run_mrc(
 
     # Evaluation
     if training_args.do_eval:
+        # Evaluate
+        training_dir = training_args.output_dir
+        eval_dir = os.path.join(training_dir, "eval")
+        os.makedirs(eval_dir)
+        training_args.output_dir = eval_dir
+
         logger.info("*** Evaluate ***")
-        metrics = trainer.evaluate()
-
+        metrics = trainer.evaluate(eval_dataset)
         metrics["eval_samples"] = len(eval_dataset)
-
         trainer.log_metrics("eval", metrics)
         trainer.save_metrics("eval", metrics)
 
+    
     #### eval dataset & eval example - predictions.json 생성됨
     if training_args.do_predict:
+        # Predict            
+        test_datasets = load_from_disk('./dataset/test_dataset/')
+        training_dir = training_args.output_dir
+        predict_dir = os.path.join(training_dir, "pred")
+        os.makedirs(predict_dir)
+        training_args.output_dir = predict_dir
+        predict_datasets = run_sparse_retrieval(
+            tokenizer.tokenize, test_datasets, training_args, data_args,
+        )
+        predict_dataset = load_eval_dataset(predict_datasets, max_seq_length, data_args, tokenizer)
+
         logger.info("*** Predict ***")
         predictions = trainer.predict(
-            test_dataset=eval_dataset, test_examples=datasets["validation"]
+            test_dataset=predict_dataset, test_examples=predict_datasets["validation"]
         )
-
         # predictions.json 은 postprocess_qa_predictions() 호출시 이미 저장됩니다.
         print(
             "No metric can be presented because there is no correct answer given. Job done!"
