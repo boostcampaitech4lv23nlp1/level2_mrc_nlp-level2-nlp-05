@@ -4,7 +4,7 @@ model_args:
   tokenizer_name:
 
 data_args:
-  dataset_name: './dataset/test_dataset'
+  dataset_name: './dataset/train_dataset'
   overwrite_cache: False
   preprocessing_num_workers:
   max_seq_length: 384
