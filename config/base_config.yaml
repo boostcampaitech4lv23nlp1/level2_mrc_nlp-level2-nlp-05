@@ -17,19 +17,20 @@ data_args:
   use_faiss : False
 
 training_args:
-  output_dir: './models/train_dataset'
+  output_dir: './models/'
   logging_dir: './logs'
   per_device_train_batch_size : 16
   per_device_eval_batch_size : 16
   save_total_limit : 2
-  load_best_model_at_end : True
-  num_train_epochs : 1
+  load_best_model_at_end : False
+  num_train_epochs : 2
   eval_steps : 250
-  evaluation_strategy : 'steps'
+  evaluation_strategy : 'no'
+  #save_strategy : 'epoch'
   overwrite_output_dir : True
-  do_train : False 
+  do_train : True
   do_eval : False 
   # do_eval 근데 False라고 박아놧는데 자꾸 True로 들어감.. 왜일까
   # evaluation strategy가 설정되어있으면 알아서 True로 들어간다고 함
   # 추후에 inference용 config 파일이 필요할듯
-  do_predict : True
+  do_predict : False
