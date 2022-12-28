@@ -157,7 +157,7 @@ def run_mrc(
 
             # Predict            
             predict_dir = os.path.join(training_dir, "pred")
-            os.makedirs(predict_dir)
+            if not os.path.exists(predict_dir): os.makedirs(predict_dir)
             training_args.output_dir = predict_dir
             predict_datasets = run_sparse_retrieval(
                 tokenizer.tokenize, test_datasets, training_args, data_args,

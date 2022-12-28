@@ -96,7 +96,7 @@ class DataTrainingArguments:
 class TrainingArguments(TrainingArguments):
 
     output_dir: str = field(
-        default='.model/train_dataset', metadata={"help": "Saved result path"}
+        default='./models/', metadata={"help": "Saved result path"}
     )
     
     logging_dir: str = field(
@@ -116,11 +116,11 @@ class TrainingArguments(TrainingArguments):
     )
 
     load_best_model_at_end : bool = field(
-        default=True, metadata = {"help": "Load best model at end"}
+        default=False, metadata = {"help": "Load best model at end"}
     )
 
     num_train_epochs : int = field(
-        default=1, metadata = {"help": "Train epochs"}
+        default=2, metadata = {"help": "Train epochs"}
     )
 
     eval_steps : int = field(
@@ -128,12 +128,38 @@ class TrainingArguments(TrainingArguments):
     )
 
     evaluation_strategy : str = field(
-        default='steps', metadata = {"help" : "evaluation strategy"}
+        default='no', metadata = {"help" : "evaluation strategy"}
     )
 
     overwrite_output_dir : bool = field(
         default=True, metadata = {"help" : "Whether overwrite output_dir when output_dir already exist"}
     )
+
+    do_train : bool = field(
+        default=True, metadata = {"help" : "whether train or not"}
+    )
+
+    do_eval : bool = field(
+        default=False, metadata = {"help":"whether eval or not"}
+    )
+
+    do_predict : bool = field(
+        default=False, metadata = {"help":"whether predict or not"}
+    )
+
+    warmup_ratio : float = field(
+        default=0.1, metadata = {"help":"Train warmup ratio"}
+    )
+
+    # warmup_step : float = field(
+    #     default=200, metadata = {"help":"Train warmup steps"}
+    # )
+    learning_rate : float = field(
+        default = 5e-5, metadata = {"help":"train learning rate"}
+    )
+
+
+
 
     # 가능한 arguments 들은 ./arguments.py 나 transformer package 안의 src/transformers/training_args.py 에서 확인 가능합니다.
     # --help flag 를 실행시켜서 확인할 수 도 있습니다.
