@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from typing import Optional
+from datetime import datetime
 
 from transformers import TrainingArguments
 
@@ -95,8 +96,10 @@ class DataTrainingArguments:
 @dataclass
 class TrainingArguments(TrainingArguments):
 
+    now = datetime.now()
+    train_start_time = now.strftime("%d-%H-%M")
     output_dir: str = field(
-        default='./models/', metadata={"help": "Saved result path"}
+        default=f'./models/{train_start_time}', metadata={"help": "Saved result path"}
     )
     
     logging_dir: str = field(
@@ -129,6 +132,10 @@ class TrainingArguments(TrainingArguments):
 
     evaluation_strategy : str = field(
         default='no', metadata = {"help" : "evaluation strategy"}
+    )
+
+    logging_steps: int = field(
+        default=20, metadata = {"help":"logging steps"}
     )
 
     overwrite_output_dir : bool = field(
