@@ -95,9 +95,8 @@ class DataTrainingArguments:
 @dataclass
 class TrainingArguments(TrainingArguments):
 
-    s
     output_dir: str = field(
-        default='.model/', metadata={"help": "Saved result path"}
+        default='./models/', metadata={"help": "Saved result path"}
     )
     
     logging_dir: str = field(
