@@ -98,7 +98,7 @@ class FaissRetrieval:
             print("Embedding pickle saved.")
 
 
-    def build_faiss(self, num_clusters=64) -> NoReturn:
+    def build_faiss(self, num_clusters=16) -> NoReturn:
 
         """
         Summary:
