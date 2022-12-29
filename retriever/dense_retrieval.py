@@ -146,10 +146,7 @@ class DenseRetrieval:
                 
                 torch.cuda.empty_cache()
 
-
         return p_model, q_model
-        
-        
         
 
 if __name__ == "__main__":
