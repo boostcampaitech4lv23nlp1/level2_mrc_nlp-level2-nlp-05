@@ -77,7 +77,7 @@ class DataTrainingArguments:
         },
     )
     eval_retrieval: bool = field(
-        default=True,
+        default=False,
         metadata={"help": "Whether to run passage retrieval using sparse embedding."},
     )
     num_clusters: int = field(
@@ -126,12 +126,12 @@ class TrainingArguments(TrainingArguments):
         default=2, metadata = {"help": "Train epochs"}
     )
 
-    eval_steps : int = field(
-        default=250, metadata = {"help" : "Number of evaluation step"}
-    )
+    # eval_steps : int = field(
+    #     default=250, metadata = {"help" : "Number of evaluation step"}
+    # )
 
     evaluation_strategy : str = field(
-        default='no', metadata = {"help" : "evaluation strategy"}
+        default='epoch', metadata = {"help" : "evaluation strategy"}
     )
 
     logging_steps: int = field(

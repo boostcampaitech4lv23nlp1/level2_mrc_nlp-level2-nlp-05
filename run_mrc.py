@@ -30,6 +30,7 @@ from transformers import (
 from utils.utils_qa import check_no_error, postprocess_qa_predictions
 from data_loaders.data_loader import load_train_dataset, load_eval_dataset
 from run_sparse_retrieval import run_sparse_retrieval
+import wandb
 
 logger = logging.getLogger(__name__)
 
@@ -117,6 +118,10 @@ def run_mrc(
         else:
             checkpoint = None
         train_result = trainer.train(resume_from_checkpoint=checkpoint)
+        
+        # 안하면 에러남 왜 인지는 나도 몰러...
+        wandb.finish()
+
         trainer.save_model()  # Saves the tokenizer too for easy upload
 
         metrics = train_result.metrics
@@ -139,6 +144,7 @@ def run_mrc(
             os.path.join(training_args.output_dir, "trainer_state.json")
         )
 
+        
         # True일 경우 : run passage retrieval
         if data_args.eval_retrieval:
             # Evaluate
@@ -173,19 +179,20 @@ def run_mrc(
                 "No metric can be presented because there is no correct answer given. Job done!"
             )
 
-    # Evaluation
-    if training_args.do_eval:
-        # Evaluate
-        training_dir = training_args.output_dir
-        eval_dir = os.path.join(training_dir, "eval")
-        os.makedirs(eval_dir)
-        training_args.output_dir = eval_dir
+    # # Evaluation
+    # evaludation_strategy가 있으면 자동으로 do_eval 값이 True가 됨 따라서 중복되는 코드라 우선 주석 처리함
+    # if training_args.do_eval:
+    #     # Evaluate
+    #     training_dir = training_args.output_dir
+    #     eval_dir = os.path.join(training_dir, "eval")
+    #     os.makedirs(eval_dir)
+    #     training_args.output_dir = eval_dir
 
-        logger.info("*** Evaluate ***")
-        metrics = trainer.evaluate(eval_dataset)
-        metrics["eval_samples"] = len(eval_dataset)
-        trainer.log_metrics("eval", metrics)
-        trainer.save_metrics("eval", metrics)
+    #     logger.info("*** Evaluate ***")
+    #     metrics = trainer.evaluate(eval_dataset)
+    #     metrics["eval_samples"] = len(eval_dataset)
+    #     trainer.log_metrics("eval", metrics)
+    #     trainer.save_metrics("eval", metrics)
 
     
     #### eval dataset & eval example - predictions.json 생성됨
