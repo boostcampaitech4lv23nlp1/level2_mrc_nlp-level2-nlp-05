@@ -1,5 +1,55 @@
 # Readme
 
+## pre-commit
+설치 및 세팅
+```
+pip install pre-commit
+touch .pre-commit-config.yaml
+```
+
+사용시
+git add로 staged된 파일에 대해서만 pre-commit 검사
+```
+git add your_files
+pre-commit run
+```
+
+## wandb-sweep
+wandb는 팀레포를 하나 파야할 것 같음
+```
+NUM=5
+wandb sweep --project our_project --entity our_entity ./config/sweep_config.yaml
+wandb agent --count $NUM out_id/our_project/sweepID
+```
+
+## Dense Passage Retriever
+<pre>
+<code>
+retriever
+├── dpr_trainer.py # p_encoder, q_encoder train하고 model 저장 및 dense vector의 faiss화 까지 진행
+├── dpr_retrieval.py # 기 저장된 faiss index를 load하고 retrieve, bulk_retrieve 가능
+├── dpr_model # encoder 모델 및 faiss index 저장 경로
+│   ├── p_encoder.pt
+│   ├── q_encoder.pt
+│   └── faiss_cluster.index
+├── config # dpr 훈련에 필요한 arguments
+│   └── dpr_arguments.py
+├── elastic_retrieval.py
+├── faiss_retrieval.py
+├── retrieval.py
+└── sparse_retrieval.py
+</code>
+</pre>
+</br>
+
+* to-do
+- [x] dpr trainer, retriever 구현
+- [x] dense vector faiss index로 저장
+- [ ] dpr + bm25 미구현
+- [ ] 하이퍼 파라미터 서칭
+- [ ] run_mrc predict에서 아직 dpr 불러오는 기능은 미구현
+- [ ] 그리고 성능 안나옴 이상한 document만 불러와짐
+
 ## 소개
 
 P stage 3 대회를 위한 베이스라인 코드 
