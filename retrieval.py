@@ -114,6 +114,7 @@ class SparseRetrieval:
             제일 적절한 것을 제외하고 모두 삭제하는 것을 권장합니다.
         """
 
+        breakpoint()
         indexer_name = f"faiss_clusters{num_clusters}.index"
         indexer_path = os.path.join(self.data_path, indexer_name)
         if os.path.isfile(indexer_path):
@@ -383,19 +384,19 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="")
     parser.add_argument(
-        "--dataset_name", metavar="./data/train_dataset", type=str, help=""
+        "--dataset_name", default="./dataset/train_dataset", type=str, help=""
     )
     parser.add_argument(
         "--model_name_or_path",
-        metavar="bert-base-multilingual-cased",
+        default="bert-base-multilingual-cased",
         type=str,
         help="",
     )
-    parser.add_argument("--data_path", metavar="./data", type=str, help="")
+    parser.add_argument("--data_path", default="./dataset", type=str, help="")
     parser.add_argument(
-        "--context_path", metavar="wikipedia_documents", type=str, help=""
+        "--context_path", default="wikipedia_documents.json", type=str, help=""
     )
-    parser.add_argument("--use_faiss", metavar=False, type=bool, help="")
+    parser.add_argument("--use_faiss", default=True, type=bool, help="")
 
     args = parser.parse_args()
 
@@ -421,6 +422,9 @@ if __name__ == "__main__":
     )
 
     query = "대통령을 포함한 미국의 행정부 견제권을 갖는 국가 기관은?"
+    
+    retriever.get_sparse_embedding()
+    retriever.build_faiss()
 
     if args.use_faiss:
 
