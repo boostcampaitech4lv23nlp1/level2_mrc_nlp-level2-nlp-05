@@ -33,7 +33,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--model_name_or_path",
-        default="klue/bert-base",
+        default="bert-base-multilingual-cased",
         type=str,
         help="",
     )
@@ -83,8 +83,10 @@ if __name__ == "__main__":
 
             print("correct retrieval result by faiss", df["correct"].sum() / len(df))
             # 0.03482824427480916 점
+
     elif args.retriever_type == 'elastic':
-        retriever = ElasticRetrieval("origin-wiki")
+        print("init elastic...")
+        retriever = ElasticRetrieval(tokenize_fn=tokenizer.tokenize, index_name="origin-wiki-multi")
 
         with timer("single query by elastic search"):
             scores, indices = retriever.retrieve(query)
@@ -95,7 +97,10 @@ if __name__ == "__main__":
             print(
                 "correct retrieval result by elastic search",
                 df["correct"].sum() / len(df),
-            ) # 0.03936068702290076 점
+            ) 
+            df.to_csv("elastic.csv")
+            # 0.57490458015267186 점
+            
     else:
         retriever = SparseRetrieval(
             tokenize_fn=tokenizer.tokenize,

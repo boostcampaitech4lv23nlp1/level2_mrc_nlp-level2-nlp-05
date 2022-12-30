@@ -32,7 +32,7 @@ def load_data(dataset_path):
 		wiki = json.load(f)
 
 	wiki_texts = list(dict.fromkeys([v["text"] for v in wiki.values()]))
-	wiki_texts = [preprocess(text) for text in wiki_texts]
+	wiki_texts = [text for text in wiki_texts]
 	wiki_corpus = [
 		{"document_text": wiki_texts[i]} for i in range(len(wiki_texts))
 	]
@@ -92,11 +92,13 @@ class ElasticRetrieval:
 			data_path/context_path가 존재해야합니다.
 
 		Summary:
-			Passage 파일을 불러오고 TfidfVectorizer를 선언하는 기능을 합니다.
+			
 		"""
 
 		self.es = Elasticsearch('http://localhost:9200', timeout=30, max_retries=10, retry_on_timeout=True)
 		
+		print(index_name)
+		self.es.indices.delete(index=index_name)
 		if self.es.indices.exists(index=index_name):
 			# origin-wiki가 이미 존재한다면
 			self.index_name = index_name
@@ -105,7 +107,7 @@ class ElasticRetrieval:
 			# index 생성
 			with open(setting_path, "r") as f:
 				setting = json.load(f)
-			es.indices.create(index=index_name, body=setting)
+			self.es.indices.create(index=index_name, body=setting)
 			self.index_name = index_name
 			print("Index creation has been completed")
 
@@ -113,11 +115,11 @@ class ElasticRetrieval:
 			wiki_corpus = load_data(os.path.join(data_path, context_path))
 			for i, text in enumerate(tqdm(wiki_corpus)):
 				try:
-					es.index(index=index_name, id=i, body=text)
+					self.es.index(index=index_name, id=i, body=text)
 				except:
 					print(f"Unable to load document {i}.")
 
-			n_records = es.count(index=index_name)["count"]
+			n_records = self.es.count(index=index_name)["count"]
 			print(f"Succesfully loaded {n_records} into {index_name}")
 			print("@@@@@@@ 데이터 삽입 완료 @@@@@@@")
 
