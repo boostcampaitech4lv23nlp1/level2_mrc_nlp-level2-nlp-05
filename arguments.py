@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from typing import Optional
+from datetime import datetime
 
 from transformers import TrainingArguments
 
@@ -76,7 +77,7 @@ class DataTrainingArguments:
         },
     )
     eval_retrieval: bool = field(
-        default=True,
+        default=False,
         metadata={"help": "Whether to run passage retrieval using sparse embedding."},
     )
     num_clusters: int = field(
@@ -95,8 +96,10 @@ class DataTrainingArguments:
 @dataclass
 class TrainingArguments(TrainingArguments):
 
+    now = datetime.now()
+    train_start_time = now.strftime("%d-%H-%M")
     output_dir: str = field(
-        default='./models/', metadata={"help": "Saved result path"}
+        default=f'./models/{train_start_time}', metadata={"help": "Saved result path"}
     )
     
     logging_dir: str = field(
@@ -123,12 +126,16 @@ class TrainingArguments(TrainingArguments):
         default=2, metadata = {"help": "Train epochs"}
     )
 
-    eval_steps : int = field(
-        default=250, metadata = {"help" : "Number of evaluation step"}
-    )
+    # eval_steps : int = field(
+    #     default=250, metadata = {"help" : "Number of evaluation step"}
+    # )
 
     evaluation_strategy : str = field(
-        default='no', metadata = {"help" : "evaluation strategy"}
+        default='epoch', metadata = {"help" : "evaluation strategy"}
+    )
+
+    logging_steps: int = field(
+        default=20, metadata = {"help":"logging steps"}
     )
 
     overwrite_output_dir : bool = field(

@@ -31,8 +31,7 @@ def main(model_args, data_args, training_args):
 
     # Redefine training arguments
     training_args = TrainingArguments(**training_args)
-    training_args.output_dir = os.path.join(training_args.output_dir, f"{train_start_time}")
-
+    
     now = datetime.now()
     train_start_time = now.strftime("%d-%H-%M")
     training_args.output_dir = os.path.join(training_args.output_dir, f"{train_start_time}")

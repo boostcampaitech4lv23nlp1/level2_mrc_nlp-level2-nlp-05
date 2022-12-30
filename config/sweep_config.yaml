@@ -1,0 +1,17 @@
+# config.yaml
+program: train_sweep.py
+method: random
+name: MRC_sweep
+metric:
+  goal: minimize
+  name: train_loss
+parameters:
+  per_device_train_batch_size: 
+    values: [16,32]
+  num_train_epochs:
+    values: [3,5,8]
+  warmup_ratio:
+    values: [0.1]
+  learning_rate:
+    min: 0.00001
+    max: 0.00005

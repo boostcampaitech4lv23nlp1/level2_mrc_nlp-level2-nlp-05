@@ -1,5 +1,5 @@
 model_args:
-  model_name_or_path : 'klue/bert-base'
+  model_name_or_path : 'klue/roberta-large'
   config_name:
   tokenizer_name:
 
@@ -16,6 +16,7 @@ train_args:
   top_k_retrieval: 10
   retriever_type: 'faiss'  # base, faiss, elastic
   #use_faiss : False
+  use_faiss : False
 
 training_args:
   output_dir: './models/'
@@ -25,8 +26,9 @@ training_args:
   save_total_limit : 2
   load_best_model_at_end : False
   num_train_epochs : 2
-  eval_steps : 250
-  evaluation_strategy : 'no'
+  logging_steps : 20
+  eval_steps: 200
+  evaluation_strategy : 'steps'
   #save_strategy : 'epoch'
   overwrite_output_dir : True
   do_train : True
