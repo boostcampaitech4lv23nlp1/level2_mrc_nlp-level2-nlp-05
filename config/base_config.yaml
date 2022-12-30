@@ -1,5 +1,5 @@
 model_args:
-  model_name_or_path : 'klue/bert-base'
+  model_name_or_path : 'klue/roberta-large'
   config_name:
   tokenizer_name:
 
@@ -11,9 +11,9 @@ data_args:
   pad_to_max_length: False
   doc_stride: 128
   max_answer_length: 30
-  eval_retrieval: False
+  eval_retrieval: True
   num_clusters: 64
-  top_k_retrieval: 10
+  top_k_retrieval: 30
   use_faiss : False
 
 training_args:

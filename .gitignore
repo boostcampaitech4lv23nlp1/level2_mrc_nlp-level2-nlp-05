@@ -4,3 +4,5 @@ cache*
 wandb
 models/*
 outputs/*
+config/*
+retriever/dpr_model/*

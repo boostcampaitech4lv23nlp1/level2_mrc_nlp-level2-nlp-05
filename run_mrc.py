@@ -119,8 +119,8 @@ def run_mrc(
             checkpoint = None
         train_result = trainer.train(resume_from_checkpoint=checkpoint)
         
-        # 안하면 에러남 왜 인지는 나도 몰러...
-        wandb.finish()
+        # # 안하면 에러남 왜 인지는 나도 몰러...
+        # wandb.finish()
 
         trainer.save_model()  # Saves the tokenizer too for easy upload
 
