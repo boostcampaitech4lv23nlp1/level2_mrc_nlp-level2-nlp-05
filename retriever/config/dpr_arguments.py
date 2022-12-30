@@ -64,7 +64,7 @@ class DprArguments:
     )
 
     model_save: bool = field(
-        default=True,
+        default=False,
         metadata={
             "help":"Whether save q-encoder, and p-encoder or not"
         }

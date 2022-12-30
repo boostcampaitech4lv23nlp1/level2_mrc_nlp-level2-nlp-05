@@ -1,5 +1,6 @@
 import json
 import random
+import os
 import numpy as np
 import pandas as pd
 from tqdm.auto import tqdm
@@ -24,6 +25,7 @@ from datasets import DatasetDict, load_from_disk, load_metric
 from omegaconf import OmegaConf
 from datetime import datetime
 from config.dpr_arguments import DprArguments
+import faiss
 
 # 난수 고정
 def set_seed(random_seed):
@@ -60,7 +62,7 @@ class BertEncoder(BertPreTrainedModel):
         pooled_output = outputs[1]
         return pooled_output
 
-class DenseRetrieval:
+class DenseTrainer:
 
     def __init__(self, args, dataset, num_neg, tokenizer, p_encoder, q_encoder):
 
@@ -225,7 +227,9 @@ class DenseRetrieval:
         torch.save(self.q_encoder, f'./dpr_model/q_encoder_{self.current_time}.pt')
 
 
-    def build_faiss(self, p_encoder=None):
+    def build_faiss(self, p_encoder=None, num_clusters=64):
+
+        args = self.args
 
         # Load passage encoder
         p_encoder = self.p_encoder if p_encoder == None else torch.load(p_encoder)
@@ -248,10 +252,10 @@ class DenseRetrieval:
                 }
                 p_emb = p_encoder(**p_inputs).to(args.device)
                 p_embs.append(p_emb)
-            
+
         # 이거 torch.stack이 shape가 안맞아서 torch.cat으로 바꾸었는데 이상한지 잘 봐주세요
         p_embs = torch.cat(p_embs, dim=0).view(len(self.passage_dataloader.dataset), -1)  # (num_passage, emb_dim)
-
+        p_embs = p_embs.to('cpu')
         # Convert dense matrix into faiss indexer
         indexer_name = f"faiss_clusters{num_clusters}_{self.current_time}.index"
         indexer_path = os.path.join('./dpr_model', indexer_name)
@@ -281,7 +285,7 @@ def main(args):
     p_encoder = BertEncoder.from_pretrained(model_checkpoint).to(args.device)
     q_encoder = BertEncoder.from_pretrained(model_checkpoint).to(args.device)
 
-    retriever = DenseRetrieval(
+    retriever = DenseTrainer(
                                 args=args,
                                 dataset=train_dataset,
                                 num_neg=args.num_neg,
@@ -289,22 +293,12 @@ def main(args):
                                 p_encoder=p_encoder,
                                 q_encoder=q_encoder)
 
-    retriever.train(args)
+    #retriever.train(args)
 
-    if args.model_save: retriever.save_model()
-    if args.build_faiss: retriever.build_faiss()
+    #if args.model_save: retriever.save_model()
+    if args.build_faiss: retriever.build_faiss('./dpr_model/p_encoder.pt')
 
 if __name__ == "__main__":
-
-    # import argparse
-    # from omegaconf import OmegaConf
-
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument('--config', type=str, default='dpr_config')
-    # parser.add_argument('--mode', type=str, default='retrieve')
-    # args, _ = parser.parse_known_args()
-    # cfg = OmegaConf.load(f'./config/{args.config}.yaml')
-
 
     parser = HfArgumentParser((DprArguments))
     args = parser.parse_args_into_dataclasses()
