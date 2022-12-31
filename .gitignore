@@ -1,6 +1,9 @@
 *.pyc
-*.arrow
 *.bin
-dataset/wikipedia_documents.json
+cache*
+wandb
 models/*
 outputs/*
+*.pt
+config/*
+retriever/dpr_model/*

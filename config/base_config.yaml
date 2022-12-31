@@ -1,0 +1,40 @@
+model_args:
+  model_name_or_path : 'klue/roberta-large'
+  config_name:
+  tokenizer_name:
+
+data_args:
+  dataset_name: './dataset/train_dataset'
+  overwrite_cache: False
+  preprocessing_num_workers:
+  max_seq_length: 384
+  pad_to_max_length: False
+  doc_stride: 128
+  max_answer_length: 30
+  eval_retrieval: True
+  num_clusters: 64
+  top_k_retrieval: 30
+  retriever_type: 'elastic'  # base, faiss, elastic
+  #use_faiss : False
+  use_faiss : False
+  index_name : 'origin-wiki-multi'
+
+training_args:
+  output_dir: './models/'
+  logging_dir: './logs'
+  per_device_train_batch_size : 16
+  per_device_eval_batch_size : 16
+  save_total_limit : 2
+  load_best_model_at_end : False
+  num_train_epochs : 2
+  logging_steps : 20
+  eval_steps: 200
+  evaluation_strategy : 'steps'
+  #save_strategy : 'epoch'
+  overwrite_output_dir : True
+  do_train : True
+  do_eval : False
+  # do_eval 근데 False라고 박아놧는데 자꾸 True로 들어감.. 왜일까
+  # evaluation strategy가 설정되어있으면 알아서 True로 들어간다고 함
+  # 추후에 inference용 config 파일이 필요할듯
+  do_predict : False

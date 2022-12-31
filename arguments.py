@@ -1,5 +1,8 @@
 from dataclasses import dataclass, field
 from typing import Optional
+from datetime import datetime
+
+from transformers import TrainingArguments
 
 
 @dataclass
@@ -75,7 +78,7 @@ class DataTrainingArguments:
         },
     )
     eval_retrieval: bool = field(
-        default=True,
+        default=False,
         metadata={"help": "Whether to run passage retrieval using sparse embedding."},
     )
     num_clusters: int = field(
@@ -90,3 +93,56 @@ class DataTrainingArguments:
     use_faiss: bool = field(
         default=False, metadata={"help": "Whether to build with faiss"}
     )
+
+
+@dataclass
+class TrainingArguments(TrainingArguments):
+
+    now = datetime.now()
+    train_start_time = now.strftime("%d-%H-%M")
+    output_dir: str = field(
+        default=f"./models/{train_start_time}", metadata={"help": "Saved result path"}
+    )
+
+    logging_dir: str = field(
+        default="./logs", metadata={"help": "Logging directory path"}
+    )
+
+    per_device_train_batch_size: int = field(
+        default=16, metadata={"help": "Train batch size per device"}
+    )
+
+    per_device_eval_batch_size: int = field(
+        default=16, metadata={"help": "Eval batch size per device"}
+    )
+
+    save_total_limit: int = field(
+        default=2, metadata={"help": "limitation of number of saved file"}
+    )
+
+    load_best_model_at_end: bool = field(
+        default=False, metadata={"help": "Load best model at end"}
+    )
+
+    num_train_epochs: int = field(default=2, metadata={"help": "Train epochs"})
+
+    evaluation_strategy: str = field(
+        default="epoch", metadata={"help": "evaluation strategy"}
+    )
+
+    logging_steps: int = field(default=20, metadata={"help": "logging steps"})
+
+    overwrite_output_dir: bool = field(
+        default=True,
+        metadata={"help": "Whether overwrite output_dir when output_dir already exist"},
+    )
+
+    do_train: bool = field(default=True, metadata={"help": "whether train or not"})
+
+    do_eval: bool = field(default=False, metadata={"help": "whether eval or not"})
+
+    do_predict: bool = field(default=False, metadata={"help": "whether predict or not"})
+
+    warmup_ratio: float = field(default=0.1, metadata={"help": "Train warmup ratio"})
+
+    learning_rate: float = field(default=5e-5, metadata={"help": "train learning rate"})
