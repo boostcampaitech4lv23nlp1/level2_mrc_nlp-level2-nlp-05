@@ -61,7 +61,9 @@ class SparseRetrieval:
 
         # Transform by vectorizer
         self.tfidfv = TfidfVectorizer(
-            tokenizer=tokenize_fn, ngram_range=(1, 2), max_features=50000,
+            tokenizer=tokenize_fn,
+            ngram_range=(1, 2),
+            max_features=50000,
         )
 
         self.p_embedding = None  # get_sparse_embedding()로 생성합니다
@@ -413,7 +415,10 @@ if __name__ == "__main__":
 
     from transformers import AutoTokenizer
 
-    tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path, use_fast=False,)
+    tokenizer = AutoTokenizer.from_pretrained(
+        args.model_name_or_path,
+        use_fast=False,
+    )
 
     retriever = SparseRetrieval(
         tokenize_fn=tokenizer.tokenize,
@@ -422,7 +427,7 @@ if __name__ == "__main__":
     )
 
     query = "대통령을 포함한 미국의 행정부 견제권을 갖는 국가 기관은?"
-    
+
     retriever.get_sparse_embedding()
     retriever.build_faiss()
 

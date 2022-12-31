@@ -4,6 +4,7 @@ from datetime import datetime
 
 from transformers import TrainingArguments
 
+
 @dataclass
 class ModelArguments:
     """
@@ -93,93 +94,55 @@ class DataTrainingArguments:
         default=False, metadata={"help": "Whether to build with faiss"}
     )
 
+
 @dataclass
 class TrainingArguments(TrainingArguments):
 
     now = datetime.now()
     train_start_time = now.strftime("%d-%H-%M")
     output_dir: str = field(
-        default=f'./models/{train_start_time}', metadata={"help": "Saved result path"}
-    )
-    
-    logging_dir: str = field(
-        default='./logs', metadata={"help": "Logging directory path"}
+        default=f"./models/{train_start_time}", metadata={"help": "Saved result path"}
     )
 
-    per_device_train_batch_size : int = field(
+    logging_dir: str = field(
+        default="./logs", metadata={"help": "Logging directory path"}
+    )
+
+    per_device_train_batch_size: int = field(
         default=16, metadata={"help": "Train batch size per device"}
     )
 
-    per_device_eval_batch_size : int = field(
+    per_device_eval_batch_size: int = field(
         default=16, metadata={"help": "Eval batch size per device"}
     )
 
-    save_total_limit : int = field(
+    save_total_limit: int = field(
         default=2, metadata={"help": "limitation of number of saved file"}
     )
 
-    load_best_model_at_end : bool = field(
-        default=False, metadata = {"help": "Load best model at end"}
+    load_best_model_at_end: bool = field(
+        default=False, metadata={"help": "Load best model at end"}
     )
 
-    num_train_epochs : int = field(
-        default=2, metadata = {"help": "Train epochs"}
+    num_train_epochs: int = field(default=2, metadata={"help": "Train epochs"})
+
+    evaluation_strategy: str = field(
+        default="epoch", metadata={"help": "evaluation strategy"}
     )
 
-    # eval_steps : int = field(
-    #     default=250, metadata = {"help" : "Number of evaluation step"}
-    # )
+    logging_steps: int = field(default=20, metadata={"help": "logging steps"})
 
-    evaluation_strategy : str = field(
-        default='epoch', metadata = {"help" : "evaluation strategy"}
+    overwrite_output_dir: bool = field(
+        default=True,
+        metadata={"help": "Whether overwrite output_dir when output_dir already exist"},
     )
 
-    logging_steps: int = field(
-        default=20, metadata = {"help":"logging steps"}
-    )
+    do_train: bool = field(default=True, metadata={"help": "whether train or not"})
 
-    overwrite_output_dir : bool = field(
-        default=True, metadata = {"help" : "Whether overwrite output_dir when output_dir already exist"}
-    )
+    do_eval: bool = field(default=False, metadata={"help": "whether eval or not"})
 
-    do_train : bool = field(
-        default=True, metadata = {"help" : "whether train or not"}
-    )
+    do_predict: bool = field(default=False, metadata={"help": "whether predict or not"})
 
-    do_eval : bool = field(
-        default=False, metadata = {"help":"whether eval or not"}
-    )
+    warmup_ratio: float = field(default=0.1, metadata={"help": "Train warmup ratio"})
 
-    do_predict : bool = field(
-        default=False, metadata = {"help":"whether predict or not"}
-    )
-
-    warmup_ratio : float = field(
-        default=0.1, metadata = {"help":"Train warmup ratio"}
-    )
-
-    # warmup_step : float = field(
-    #     default=200, metadata = {"help":"Train warmup steps"}
-    # )
-    learning_rate : float = field(
-        default = 5e-5, metadata = {"help":"train learning rate"}
-    )
-
-
-
-
-    # 가능한 arguments 들은 ./arguments.py 나 transformer package 안의 src/transformers/training_args.py 에서 확인 가능합니다.
-    # --help flag 를 실행시켜서 확인할 수 도 있습니다.
-    
-    # [참고] argument를 manual하게 수정하고 싶은 경우에 아래와 같은 방식을 사용할 수 있습니다
-    # training_args.per_device_train_batch_size = 4
-    # print(training_args.per_device_train_batch_size)
-    # training_args.output_dir = os.path.join(training_args.output_dir, f"{train_start_time}")
-    # training_args.logging_dir="./logs",
-    # training_args.per_device_train_batch_size = 16
-    # training_args.per_device_eval_batch_size = 16
-    # training_args.save_total_limit = 2
-    # training_args.load_best_model_at_end = True
-    # training_args.num_train_epochs = 1
-    # training_args.eval_steps = 250
-    # training_args.evaluation_strategy = "steps"
+    learning_rate: float = field(default=5e-5, metadata={"help": "train learning rate"})

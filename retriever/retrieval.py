@@ -41,8 +41,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--context_path", default="wikipedia_documents.json", type=str, help=""
     )
-    parser.add_argument("--retriever_type", default='elastic', type=str, help="")
-
+    parser.add_argument("--retriever_type", default="elastic", type=str, help="")
     args = parser.parse_args()
 
     print(args)
@@ -59,12 +58,15 @@ if __name__ == "__main__":
 
     from transformers import AutoTokenizer
 
-    tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path, use_fast=False,)
+    tokenizer = AutoTokenizer.from_pretrained(
+        args.model_name_or_path,
+        use_fast=False,
+    )
 
     query = "대통령을 포함한 미국의 행정부 견제권을 갖는 국가 기관은?"
 
     print(args.retriever_type)
-    if args.retriever_type == 'faiss':
+    if args.retriever_type == "faiss":
         retriever = FaissRetrieval(
             tokenize_fn=tokenizer.tokenize,
             data_path=args.data_path,
@@ -84,9 +86,11 @@ if __name__ == "__main__":
             print("correct retrieval result by faiss", df["correct"].sum() / len(df))
             # 0.03482824427480916 점
 
-    elif args.retriever_type == 'elastic':
+    elif args.retriever_type == "elastic":
         print("init elastic...")
-        retriever = ElasticRetrieval(tokenize_fn=tokenizer.tokenize, index_name="origin-wiki-multi")
+        retriever = ElasticRetrieval(
+            tokenize_fn=tokenizer.tokenize, index_name="origin-wiki-multi"
+        )
 
         with timer("single query by elastic search"):
             scores, indices = retriever.retrieve(query)
@@ -97,10 +101,10 @@ if __name__ == "__main__":
             print(
                 "correct retrieval result by elastic search",
                 df["correct"].sum() / len(df),
-            ) 
+            )
             df.to_csv("elastic.csv")
             # 0.57490458015267186 점
-            
+
     else:
         retriever = SparseRetrieval(
             tokenize_fn=tokenizer.tokenize,
@@ -118,6 +122,4 @@ if __name__ == "__main__":
             print(
                 "correct retrieval result by exhaustive search",
                 df["correct"].sum() / len(df),
-            ) # 0.25190839694656486 점
-
-
+            )  # 0.25190839694656486 점
