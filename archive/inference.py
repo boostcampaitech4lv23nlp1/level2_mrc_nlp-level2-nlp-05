@@ -89,7 +89,10 @@ def main():
     # True일 경우 : run passage retrieval
     if data_args.eval_retrieval:
         datasets = run_sparse_retrieval(
-            tokenizer.tokenize, datasets, training_args, data_args,
+            tokenizer.tokenize,
+            datasets,
+            training_args,
+            data_args,
         )
 
     # eval or predict mrc model
@@ -98,13 +101,13 @@ def main():
 
 
 def run_sparse_retrieval(
-        tokenize_fn: Callable[[str], List[str]],
-        datasets: DatasetDict,
-        training_args: TrainingArguments,
-        data_args: DataTrainingArguments,
-        data_path: str = "../data",
-        context_path: str = "wikipedia_documents.json",
-    ) -> DatasetDict:
+    tokenize_fn: Callable[[str], List[str]],
+    datasets: DatasetDict,
+    training_args: TrainingArguments,
+    data_args: DataTrainingArguments,
+    data_path: str = "../data",
+    context_path: str = "wikipedia_documents.json",
+) -> DatasetDict:
 
     # Query에 맞는 Passage들을 Retrieval 합니다.
     retriever = SparseRetrieval(
@@ -151,7 +154,7 @@ def run_sparse_retrieval(
     return datasets
 
 
-'''def run_mrc(
+"""def run_mrc(
         data_args: DataTrainingArguments,
         training_args: TrainingArguments,
         model_args: ModelArguments,
@@ -303,7 +306,7 @@ def run_sparse_retrieval(
 
         trainer.log_metrics("test", metrics)
         trainer.save_metrics("test", metrics)
-'''
+"""
 
 if __name__ == "__main__":
     main()

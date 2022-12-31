@@ -33,10 +33,12 @@ def main(model_args, data_args, training_args):
 
     # Redefine training arguments
     training_args = TrainingArguments(**training_args)
-    
+
     now = datetime.now()
     train_start_time = now.strftime("%d-%H-%M")
-    training_args.output_dir = os.path.join(training_args.output_dir, f"{train_start_time}")
+    training_args.output_dir = os.path.join(
+        training_args.output_dir, f"{train_start_time}"
+    )
 
     # Set Loggin & verbosity
     logging.basicConfig(
@@ -87,8 +89,8 @@ def main(model_args, data_args, training_args):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config', type=str, default='')
+    parser.add_argument("--config", type=str, default="")
     args, _ = parser.parse_known_args()
-    cfg = OmegaConf.load(f'./config/{args.config}.yaml')
+    cfg = OmegaConf.load(f"./config/{args.config}.yaml")
 
     main(cfg.model_args, cfg.data_args, cfg.training_args)

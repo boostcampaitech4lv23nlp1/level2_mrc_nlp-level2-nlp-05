@@ -16,11 +16,13 @@ import torch
 from torch.utils.data import DataLoader, TensorDataset
 from dpr_trainer import BertEncoder
 
+
 @contextmanager
 def timer(name):
     t0 = time.time()
     yield
     print(f"[{name}] done in {time.time() - t0:.3f} s")
+
 
 class DenseRetriever:
     def __init__(
@@ -64,11 +66,14 @@ class DenseRetriever:
 
         self.indexer = faiss.read_index(indexer)
         self.q_encoder = torch.load(q_encoder)
-        self.tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path, use_fast=False,)
-        self.device = 'cuda'
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            args.model_name_or_path,
+            use_fast=False,
+        )
+        self.device = "cuda"
 
     def retrieve_faiss(
-            self, query_or_dataset: Union[str, Dataset], topk: Optional[int] = 1
+        self, query_or_dataset: Union[str, Dataset], topk: Optional[int] = 1
     ) -> Union[Tuple[List, List], pd.DataFrame]:
 
         """
@@ -135,7 +140,7 @@ class DenseRetriever:
                     tmp["original_context"] = example["context"]
                     tmp["answers"] = example["answers"]
                 total.append(tmp)
-            
+
             result = pd.DataFrame(total)
             breakpoint()
             return result
@@ -155,16 +160,18 @@ class DenseRetriever:
         """
 
         # Tokenize
-        q_tokenized = self.tokenizer(query, padding="max_length", truncation=True, return_tensors='pt')
+        q_tokenized = self.tokenizer(
+            query, padding="max_length", truncation=True, return_tensors="pt"
+        )
 
-        # Get dense vector(query encoder hidden size) of a single query 
+        # Get dense vector(query encoder hidden size) of a single query
         with torch.no_grad():
             self.q_encoder.eval()
             q_tokenized.to(self.device)
             output = self.q_encoder(**q_tokenized).to(self.device)
-        
+
         # output.shape = (1,hidden_size)
-        output = np.float32(output.to('cpu'))
+        output = np.float32(output.to("cpu"))
 
         # Search in indexer
         with timer("query faiss search"):
@@ -186,10 +193,16 @@ class DenseRetriever:
             vocab 에 없는 이상한 단어로 query 하는 경우 assertion 발생 (예) 뙣뙇?
         """
         # Batch tokenizer
-        q_tokenized = self.tokenizer(queries, padding="max_length", truncation=True, return_tensors='pt')
-        queries_dataset = TensorDataset(q_tokenized['input_ids'], q_tokenized['attention_mask'], q_tokenized['token_type_ids'])
+        q_tokenized = self.tokenizer(
+            queries, padding="max_length", truncation=True, return_tensors="pt"
+        )
+        queries_dataset = TensorDataset(
+            q_tokenized["input_ids"],
+            q_tokenized["attention_mask"],
+            q_tokenized["token_type_ids"],
+        )
         queries_dataloader = DataLoader(queries_dataset, batch_size=batch_size)
-        
+
         # Get dense vector(query encoder hidden size) of bulk query
         with torch.no_grad():
             self.q_encoder.eval()
@@ -197,9 +210,9 @@ class DenseRetriever:
             for batch in tqdm(queries_dataloader):
                 batch = tuple(t.to(self.device) for t in batch)
                 q_inputs = {
-                    'input_ids': batch[0],
-                    'attention_mask': batch[1],
-                    'token_type_ids': batch[2]
+                    "input_ids": batch[0],
+                    "attention_mask": batch[1],
+                    "token_type_ids": batch[2],
                 }
                 # q_emb.shape = (batch_size, hidden_size)
                 q_emb = self.q_encoder(**q_inputs).to(self.device)
@@ -208,10 +221,11 @@ class DenseRetriever:
         # output.shape = (num_passage, hidden_size)
         q_embs = torch.cat(q_embs, dim=0).view(len(queries_dataset), -1)
         # Convert torch_tensor into np.float32
-        q_embs = np.float32(q_embs.to('cpu'))
+        q_embs = np.float32(q_embs.to("cpu"))
 
         D, I = self.indexer.search(q_embs, k)
         return D.tolist(), I.tolist()
+
 
 if __name__ == "__main__":
 
@@ -219,13 +233,29 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="")
     parser.add_argument(
-        "--context_path", default="../dataset/wikipedia_documents.json", type=str, help=""
+        "--context_path",
+        default="../dataset/wikipedia_documents.json",
+        type=str,
+        help="",
     )
     parser.add_argument(
-        "--model_name_or_path", default="klue/bert-base", type=str, help="",
+        "--model_name_or_path",
+        default="klue/bert-base",
+        type=str,
+        help="",
     )
-    parser.add_argument("--indexer_path", default='./dpr_model/faiss_clusters64_29-23-52.index', type=str, help="")
-    parser.add_argument("--query_encoder", default='./dpr_model/q_encoder.pt', type=str, help='query encoder path')
+    parser.add_argument(
+        "--indexer_path",
+        default="./dpr_model/faiss_clusters64_29-23-52.index",
+        type=str,
+        help="",
+    )
+    parser.add_argument(
+        "--query_encoder",
+        default="./dpr_model/q_encoder.pt",
+        type=str,
+        help="query encoder path",
+    )
     args = parser.parse_args()
 
     # Initiate DenseRetriver
@@ -234,7 +264,7 @@ if __name__ == "__main__":
         indexer=args.indexer_path,
         q_encoder=args.query_encoder,
         context_path=args.context_path,
-    )  
+    )
 
     # Test single query
     query = "대통령을 포함한 미국의 행정부 견제권을 갖는 국가 기관은?"
@@ -243,7 +273,7 @@ if __name__ == "__main__":
 
     # Test bulk dataset query
     # Load dataset and concat train and valid
-    org_dataset = load_from_disk('../dataset/train_dataset')
+    org_dataset = load_from_disk("../dataset/train_dataset")
     full_ds = concatenate_datasets(
         [
             org_dataset["train"].flatten_indices(),

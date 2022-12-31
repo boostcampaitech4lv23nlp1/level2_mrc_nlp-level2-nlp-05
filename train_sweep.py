@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 def main():
 
-    with open('./config/sweep_config.yaml') as file:
+    with open("./config/sweep_config.yaml") as file:
         config = yaml.load(file, Loader=yaml.FullLoader)
 
     run = wandb.init(config=config)
@@ -44,7 +44,7 @@ def main():
         (ModelArguments, DataTrainingArguments, TrainingArguments)
     )
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
-    
+
     # Set Loggin & verbosity
     logging.basicConfig(
         format="%(asctime)s - %(levelname)s - %(name)s -    %(message)s",

@@ -34,14 +34,15 @@ import wandb
 
 logger = logging.getLogger(__name__)
 
+
 def run_mrc(
-        data_args: DataTrainingArguments,
-        training_args: TrainingArguments,
-        model_args: ModelArguments,
-        datasets: DatasetDict,
-        tokenizer,
-        model,
-    ) -> NoReturn:
+    data_args: DataTrainingArguments,
+    training_args: TrainingArguments,
+    model_args: ModelArguments,
+    datasets: DatasetDict,
+    tokenizer,
+    model,
+) -> NoReturn:
 
     # 오류가 있는지 확인합니다.
     last_checkpoint, max_seq_length = check_no_error(
@@ -60,11 +61,11 @@ def run_mrc(
 
     # Post-processing:
     def post_processing_function(
-            examples,
-            features,
-            predictions: Tuple[np.ndarray, np.ndarray],
-            training_args: TrainingArguments,
-        ) -> EvalPrediction:
+        examples,
+        features,
+        predictions: Tuple[np.ndarray, np.ndarray],
+        training_args: TrainingArguments,
+    ) -> EvalPrediction:
 
         # Post-processing: start logits과 end logits을 original context의 정답과 match시킵니다.
         predictions = postprocess_qa_predictions(
@@ -81,20 +82,22 @@ def run_mrc(
         if training_args.do_predict:
             return formatted_predictions
 
-        answer_column_name = "answers" if "answers" in datasets["validation"].column_names else datasets["validation"].column_names[2]
+        answer_column_name = (
+            "answers"
+            if "answers" in datasets["validation"].column_names
+            else datasets["validation"].column_names[2]
+        )
         references = [
             {"id": ex["id"], "answers": ex[answer_column_name]}
             for ex in datasets["validation"]
         ]
-        return EvalPrediction(
-            predictions=formatted_predictions, label_ids=references
-        )
+        return EvalPrediction(predictions=formatted_predictions, label_ids=references)
 
     metric = load_metric("squad")
 
     def compute_metrics(p: EvalPrediction):
         return metric.compute(predictions=p.predictions, references=p.label_ids)
-    
+
     print("init trainer...")
     # Trainer 초기화
     trainer = QuestionAnsweringTrainer(
@@ -118,7 +121,7 @@ def run_mrc(
         else:
             checkpoint = None
         train_result = trainer.train(resume_from_checkpoint=checkpoint)
-    
+
         trainer.save_model()  # Saves the tokenizer too for easy upload
         metrics = train_result.metrics
         metrics["train_samples"] = len(train_dataset)
@@ -139,13 +142,14 @@ def run_mrc(
         trainer.state.save_to_json(
             os.path.join(training_args.output_dir, "trainer_state.json")
         )
-        
+
         # True일 경우 : run passage retrieval
         if data_args.eval_retrieval:
             # Evaluate
             training_dir = training_args.output_dir
             eval_dir = os.path.join(training_dir, "eval")
-            if not os.path.exists(eval_dir): os.makedirs(eval_dir)
+            if not os.path.exists(eval_dir):
+                os.makedirs(eval_dir)
             training_args.output_dir = eval_dir
 
             logger.info("*** Evaluate ***")
@@ -154,20 +158,27 @@ def run_mrc(
             trainer.log_metrics("eval", metrics)
             trainer.save_metrics("eval", metrics)
 
-            test_datasets = load_from_disk('./dataset/test_dataset/')
+            test_datasets = load_from_disk("./dataset/test_dataset/")
 
-            # Predict            
+            # Predict
             predict_dir = os.path.join(training_dir, "pred")
-            if not os.path.exists(predict_dir): os.makedirs(predict_dir)
+            if not os.path.exists(predict_dir):
+                os.makedirs(predict_dir)
             training_args.output_dir = predict_dir
             predict_datasets = run_sparse_retrieval(
-                tokenizer.tokenize, test_datasets, training_args, data_args,
+                tokenizer.tokenize,
+                test_datasets,
+                training_args,
+                data_args,
             )
-            predict_dataset = load_eval_dataset(predict_datasets, max_seq_length, data_args, tokenizer)
+            predict_dataset = load_eval_dataset(
+                predict_datasets, max_seq_length, data_args, tokenizer
+            )
 
             logger.info("*** Predict ***")
             predictions = trainer.predict(
-                test_dataset=predict_dataset, test_examples=predict_datasets["validation"]
+                test_dataset=predict_dataset,
+                test_examples=predict_datasets["validation"],
             )
             # predictions.json 은 postprocess_qa_predictions() 호출시 이미 저장됩니다.
             print(
@@ -179,7 +190,8 @@ def run_mrc(
         # Evaluate
         training_dir = training_args.output_dir
         eval_dir = os.path.join(training_dir, "eval")
-        if not os.path.exists(eval_dir): os.makedirs(eval_dir)
+        if not os.path.exists(eval_dir):
+            os.makedirs(eval_dir)
         training_args.output_dir = eval_dir
 
         logger.info("*** Evaluate ***")
@@ -187,19 +199,25 @@ def run_mrc(
         metrics["eval_samples"] = len(eval_dataset)
         trainer.log_metrics("eval", metrics)
         trainer.save_metrics("eval", metrics)
-    
+
     #### eval dataset & eval example - predictions.json 생성됨
     if training_args.do_predict:
-        # Predict            
-        test_datasets = load_from_disk('./dataset/test_dataset/')
+        # Predict
+        test_datasets = load_from_disk("./dataset/test_dataset/")
         training_dir = training_args.output_dir
         predict_dir = os.path.join(training_dir, "pred")
-        if not os.path.exists(predict_dir): os.makedirs(predict_dir)
+        if not os.path.exists(predict_dir):
+            os.makedirs(predict_dir)
         training_args.output_dir = predict_dir
         predict_datasets = run_sparse_retrieval(
-            tokenizer.tokenize, test_datasets, training_args, data_args,
+            tokenizer.tokenize,
+            test_datasets,
+            training_args,
+            data_args,
         )
-        predict_dataset = load_eval_dataset(predict_datasets, max_seq_length, data_args, tokenizer)
+        predict_dataset = load_eval_dataset(
+            predict_datasets, max_seq_length, data_args, tokenizer
+        )
 
         logger.info("*** Predict ***")
         predictions = trainer.predict(

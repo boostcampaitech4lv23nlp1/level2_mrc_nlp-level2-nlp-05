@@ -33,7 +33,7 @@ training_args:
   #save_strategy : 'epoch'
   overwrite_output_dir : True
   do_train : True
-  do_eval : False 
+  do_eval : False
   # do_eval 근데 False라고 박아놧는데 자꾸 True로 들어감.. 왜일까
   # evaluation strategy가 설정되어있으면 알아서 True로 들어간다고 함
   # 추후에 inference용 config 파일이 필요할듯
