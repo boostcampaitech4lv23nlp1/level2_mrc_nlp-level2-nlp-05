@@ -41,10 +41,8 @@ class BertEncoder(BertPreTrainedModel):
 
     def __init__(self, config):
         super(BertEncoder, self).__init__(config)
-
         self.bert = BertModel(config)
         self.init_weights()
-      
       
     def forward(
             self,
@@ -77,24 +75,21 @@ class DenseTrainer:
 
         now = datetime.now()
         self.current_time = now.strftime("%d-%H-%M")
-
         self.prepare_in_batch_negative(num_neg=self.num_neg)
 
+    # build_faiss를 할때 wiki passage의 hidden size를 구하기 위함. 훈련과 관련 x
     def parse_wiki_data(self):
 
         print("build wiki data")
         with open('../dataset/wikipedia_documents.json', "r", encoding="utf-8") as f:
             wiki = json.load(f)
 
-        self.contexts = list(
-            dict.fromkeys([v["text"] for v in wiki.values()])
-        )  # set 은 매번 순서가 바뀌므로
+        self.contexts = list(dict.fromkeys([v["text"] for v in wiki.values()])) 
 
         valid_seqs = self.tokenizer(self.contexts, padding="max_length", truncation=True, return_tensors='pt')
         passage_dataset = TensorDataset(
             valid_seqs['input_ids'], valid_seqs['attention_mask'], valid_seqs['token_type_ids']
         )
-        # 이거를 위키로 바꿔야 하고
         self.passage_dataloader = DataLoader(passage_dataset, batch_size=self.args.per_device_train_batch_size)
 
     def prepare_in_batch_negative(self, dataset=None, num_neg=2, tokenizer=None):
@@ -221,11 +216,11 @@ class DenseTrainer:
 
                     del p_inputs, q_inputs
     
+    # 훈련된 모델을 pt 파일로 저장
     def save_model(self):
 
         torch.save(self.p_encoder, f'./dpr_model/p_encoder_{self.current_time}.pt')
         torch.save(self.q_encoder, f'./dpr_model/q_encoder_{self.current_time}.pt')
-
 
     def build_faiss(self, p_encoder=None, num_clusters=64):
 
@@ -250,12 +245,14 @@ class DenseTrainer:
                     'attention_mask': batch[1],
                     'token_type_ids': batch[2]
                 }
+                # p_emb.shape = (batch_size, hidden_size)
                 p_emb = p_encoder(**p_inputs).to(args.device)
                 p_embs.append(p_emb)
 
-        # 이거 torch.stack이 shape가 안맞아서 torch.cat으로 바꾸었는데 이상한지 잘 봐주세요
-        p_embs = torch.cat(p_embs, dim=0).view(len(self.passage_dataloader.dataset), -1)  # (num_passage, emb_dim)
+        # p_embs.shape = (number_of_total_passage, hidden_size)
+        p_embs = torch.cat(p_embs, dim=0).view(len(self.passage_dataloader.dataset), -1)
         p_embs = p_embs.to('cpu')
+
         # Convert dense matrix into faiss indexer
         indexer_name = f"faiss_clusters{num_clusters}_{self.current_time}.index"
         indexer_path = os.path.join('./dpr_model', indexer_name)
@@ -265,6 +262,7 @@ class DenseTrainer:
 
         num_clusters = num_clusters
         quantizer = faiss.IndexFlatL2(emb_dim)
+
 
         self.indexer = faiss.IndexIVFScalarQuantizer(
             quantizer, quantizer.d, num_clusters, faiss.METRIC_L2
@@ -277,14 +275,17 @@ class DenseTrainer:
 
 def main(args):
 
+    # default : ./dataset/train_dataset 으로 훈련 합니다.
     train_dataset = load_from_disk(args.train_dataset)
-    train_dataset = train_dataset['train']
+    train_dataset = train_dataset['train']  
 
+    # Initialize tokenizer, config, model
     model_checkpoint = args.model_name_or_path
     tokenizer = AutoTokenizer.from_pretrained(model_checkpoint)
     p_encoder = BertEncoder.from_pretrained(model_checkpoint).to(args.device)
     q_encoder = BertEncoder.from_pretrained(model_checkpoint).to(args.device)
 
+    # Initialize Trainer class and train
     retriever = DenseTrainer(
                                 args=args,
                                 dataset=train_dataset,
@@ -293,14 +294,16 @@ def main(args):
                                 p_encoder=p_encoder,
                                 q_encoder=q_encoder)
 
-    #retriever.train(args)
+    retriever.train(args)
 
-    #if args.model_save: retriever.save_model()
-    if args.build_faiss: retriever.build_faiss('./dpr_model/p_encoder.pt')
+    # 훈련이 끝나면 훈련이 끝난 모델을 저장합니다.
+    if args.model_save: retriever.save_model()
+    # 훈련이 끝나면 wiki passage들을 passage encoder를 통과시켜 각 passage의 hidden size를 구하고 faiss indexer로 만듭니다.
+    if args.build_faiss: retriever.build_faiss(args.num_clusters)
 
 if __name__ == "__main__":
 
+    # 훈련 관련 파라미터는 ./config/dpr_arguments.py 에 있습니다.
     parser = HfArgumentParser((DprArguments))
     args = parser.parse_args_into_dataclasses()
-
     main(args[0])

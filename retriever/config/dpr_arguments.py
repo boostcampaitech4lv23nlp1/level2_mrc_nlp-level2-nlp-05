@@ -77,7 +77,6 @@ class DprArguments:
         }
     )
 
-
     adam_epsilon: float = field(
         default=1e-08
     )
@@ -92,5 +91,9 @@ class DprArguments:
 
     device: str = field(
         default='cuda'
+    )
+
+    num_clusters: int = field(
+        default=64, metadata={"help":"Number of cluster of faiss indexer"}
     )
     

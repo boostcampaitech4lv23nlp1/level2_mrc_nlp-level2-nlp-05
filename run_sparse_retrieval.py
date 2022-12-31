@@ -54,7 +54,6 @@ def run_sparse_retrieval(
         print(data_args.retriever_type)
         retriever = ElasticRetrieval(data_args.index_name)
         
-        retriever.build_faiss(num_clusters=data_args.num_clusters)
         df = retriever.retrieve(
             datasets["validation"], topk=data_args.top_k_retrieval
         )
@@ -65,7 +64,7 @@ def run_sparse_retrieval(
         )
         retriever.get_sparse_embedding()
         df = retriever.retrieve(datasets["validation"], topk=data_args.top_k_retrieval)
-
+    
     # test data 에 대해선 정답이 없으므로 id question context 로만 데이터셋이 구성됩니다.
     f = Features(
         {

@@ -70,8 +70,8 @@ class ElasticRetrieval:
 			tokenize_fn,
 			data_path: Optional[str] = "../dataset/",
 			context_path: Optional[str] = "wikipedia_documents.json",
-			setting_path: Optional[str] = "setting.json",
-			index_name: Optional[str] = "origin-wiki"
+			setting_path: Optional[str] = "./retriever/setting.json",
+			index_name: Optional[str] = "origin-wiki-multi"
 		) -> None:
 
 		"""
@@ -98,7 +98,7 @@ class ElasticRetrieval:
 		self.es = Elasticsearch('http://localhost:9200', timeout=30, max_retries=10, retry_on_timeout=True)
 		
 		print(index_name)
-		self.es.indices.delete(index=index_name)
+		#self.es.indices.delete(index=index_name)
 		if self.es.indices.exists(index=index_name):
 			# origin-wiki가 이미 존재한다면
 			self.index_name = index_name
@@ -160,7 +160,7 @@ class ElasticRetrieval:
 					"question": example["question"],
 					"id": example["id"],
 					# Retrieve한 Passage의 id, context를 반환합니다.
-					"context_id": doc_indices[idx],
+					#"context_id": doc_indices[idx],
 					"context": " ".join(retrieved_context),  # 수정
 				}
 				if "context" in example.keys() and "answers" in example.keys():

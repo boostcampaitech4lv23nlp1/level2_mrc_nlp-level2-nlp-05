@@ -22,13 +22,13 @@ def timer(name):
     yield
     print(f"[{name}] done in {time.time() - t0:.3f} s")
 
-class DenseRetrieval:
+class DenseRetriever:
     def __init__(
         self,
         tokenize_fn,
         indexer,
         q_encoder,
-        context_path: Optional[str] = "wikipedia_documents.json",
+        context_path: Optional[str] = "../dataset/wikipedia_documents.json",
     ) -> NoReturn:
 
         """
@@ -154,22 +154,26 @@ class DenseRetrieval:
             vocab 에 없는 이상한 단어로 query 하는 경우 assertion 발생 (예) 뙣뙇?
         """
 
+        # Tokenize
         q_tokenized = self.tokenizer(query, padding="max_length", truncation=True, return_tensors='pt')
 
+        # Get dense vector(query encoder hidden size) of a single query 
         with torch.no_grad():
             self.q_encoder.eval()
             q_tokenized.to(self.device)
             output = self.q_encoder(**q_tokenized).to(self.device)
         
+        # output.shape = (1,hidden_size)
         output = np.float32(output.to('cpu'))
 
+        # Search in indexer
         with timer("query faiss search"):
             D, I = self.indexer.search(output, k)
 
         return D.tolist()[0], I.tolist()[0]
 
     def get_relevant_doc_bulk_faiss(
-        self, queries: List, k: Optional[int] = 1
+        self, queries: List, k: Optional[int] = 1, batch_size: Optional[int] = 16
     ) -> Tuple[List, List]:
 
         """
@@ -181,33 +185,29 @@ class DenseRetrieval:
         Note:
             vocab 에 없는 이상한 단어로 query 하는 경우 assertion 발생 (예) 뙣뙇?
         """
-
+        # Batch tokenizer
         q_tokenized = self.tokenizer(queries, padding="max_length", truncation=True, return_tensors='pt')
-
-        queries_dataset = TensorDataset(
-            q_tokenized['input_ids'], q_tokenized['attention_mask'], q_tokenized['token_type_ids']
-        )
-        # 이거를 위키로 바꿔야 하고
-        queries_dataloader = DataLoader(queries_dataset, batch_size=16)
+        queries_dataset = TensorDataset(q_tokenized['input_ids'], q_tokenized['attention_mask'], q_tokenized['token_type_ids'])
+        queries_dataloader = DataLoader(queries_dataset, batch_size=batch_size)
         
+        # Get dense vector(query encoder hidden size) of bulk query
         with torch.no_grad():
             self.q_encoder.eval()
-
             q_embs = []
-
             for batch in tqdm(queries_dataloader):
-
                 batch = tuple(t.to(self.device) for t in batch)
                 q_inputs = {
                     'input_ids': batch[0],
                     'attention_mask': batch[1],
                     'token_type_ids': batch[2]
                 }
+                # q_emb.shape = (batch_size, hidden_size)
                 q_emb = self.q_encoder(**q_inputs).to(self.device)
                 q_embs.append(q_emb)
 
-
-        q_embs = torch.cat(q_embs, dim=0).view(len(queries_dataset), -1)  # (num_passage, emb_dim)
+        # output.shape = (num_passage, hidden_size)
+        q_embs = torch.cat(q_embs, dim=0).view(len(queries_dataset), -1)
+        # Convert torch_tensor into np.float32
         q_embs = np.float32(q_embs.to('cpu'))
 
         D, I = self.indexer.search(q_embs, k)
@@ -228,18 +228,21 @@ if __name__ == "__main__":
     parser.add_argument("--query_encoder", default='./dpr_model/q_encoder.pt', type=str, help='query encoder path')
     args = parser.parse_args()
 
-    retriever = DenseRetrieval(
+    # Initiate DenseRetriver
+    retriever = DenseRetriever(
         tokenize_fn=args.model_name_or_path,
         indexer=args.indexer_path,
         q_encoder=args.query_encoder,
         context_path=args.context_path,
-    )
+    )  
 
-    # query = "대통령을 포함한 미국의 행정부 견제권을 갖는 국가 기관은?"
+    # Test single query
+    query = "대통령을 포함한 미국의 행정부 견제권을 갖는 국가 기관은?"
+    with timer("single query by faiss"):
+        scores, indices = retriever.retrieve_faiss(query)
 
-    # with timer("single query by faiss"):
-    #     scores, indices = retriever.retrieve_faiss(query)
-
+    # Test bulk dataset query
+    # Load dataset and concat train and valid
     org_dataset = load_from_disk('../dataset/train_dataset')
     full_ds = concatenate_datasets(
         [
@@ -247,24 +250,9 @@ if __name__ == "__main__":
             org_dataset["validation"].flatten_indices(),
         ]
     )
-
-    # test bulk
+    # query bulk data and caculate accuracy
     with timer("bulk query by exhaustive search"):
         df = retriever.retrieve_faiss(full_ds, topk=3)
         df["correct"] = df["original_context"] == df["context"]
 
         print("correct retrieval result by faiss", df["correct"].sum() / len(df))
-        
-
-    
-
-# # Test sparse
-#     org_dataset = load_from_disk(args.dataset_name)
-#     full_ds = concatenate_datasets(
-#         [
-#             org_dataset["train"].flatten_indices(),
-#             org_dataset["validation"].flatten_indices(),
-#         ]
-#     )  # train dev 를 합친 4192 개 질문에 대해 모두 테스트
-#     print("*" * 40, "query dataset", "*" * 40)
-#     print(full_ds)

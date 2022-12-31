@@ -42,7 +42,6 @@ if __name__ == "__main__":
         "--context_path", default="wikipedia_documents.json", type=str, help=""
     )
     parser.add_argument("--retriever_type", default='elastic', type=str, help="")
-
     args = parser.parse_args()
 
     print(args)
