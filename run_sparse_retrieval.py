@@ -51,9 +51,16 @@ def run_sparse_retrieval(
         df = retriever.retrieve_faiss(
             datasets["validation"], topk=data_args.top_k_retrieval
         )
+    
     elif data_args.retriever_type == "elastic":
         print(data_args.retriever_type)
-        retriever = ElasticRetrieval(data_args.index_name)
+
+        retriever = ElasticRetrieval(
+            data_path=data_args.data_path,
+            context_path=data_args.context_path,
+            setting_path=data_args.setting_path,
+            index_name=data_args.index_name
+            )
 
         df = retriever.retrieve(datasets["validation"], topk=data_args.top_k_retrieval)
     else:

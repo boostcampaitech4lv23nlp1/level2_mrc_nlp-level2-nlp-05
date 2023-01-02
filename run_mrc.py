@@ -185,20 +185,20 @@ def run_mrc(
                 "No metric can be presented because there is no correct answer given. Job done!"
             )
 
-    # Evaluation # train 중 evaluatioin을 실시하면 do_eval 값이 자동으로 True로 들어감
-    if training_args.do_eval and not training_args.do_train:
-        # Evaluate
-        training_dir = training_args.output_dir
-        eval_dir = os.path.join(training_dir, "eval")
-        if not os.path.exists(eval_dir):
-            os.makedirs(eval_dir)
-        training_args.output_dir = eval_dir
+    # # Evaluation # train 중 evaluatioin을 실시하면 do_eval 값이 자동으로 True로 들어감
+    # if training_args.do_eval and not training_args.do_train:
+    #     # Evaluate
+    #     training_dir = training_args.output_dir
+    #     eval_dir = os.path.join(training_dir, "eval")
+    #     if not os.path.exists(eval_dir):
+    #         os.makedirs(eval_dir)
+    #     training_args.output_dir = eval_dir
 
-        logger.info("*** Evaluate ***")
-        metrics = trainer.evaluate(eval_dataset)
-        metrics["eval_samples"] = len(eval_dataset)
-        trainer.log_metrics("eval", metrics)
-        trainer.save_metrics("eval", metrics)
+    #     logger.info("*** Evaluate ***")
+    #     metrics = trainer.evaluate(eval_dataset)
+    #     metrics["eval_samples"] = len(eval_dataset)
+    #     trainer.log_metrics("eval", metrics)
+    #     trainer.save_metrics("eval", metrics)
 
     #### eval dataset & eval example - predictions.json 생성됨
     if training_args.do_predict:
@@ -215,10 +215,10 @@ def run_mrc(
             training_args,
             data_args,
         )
+        
         predict_dataset = load_eval_dataset(
             predict_datasets, max_seq_length, data_args, tokenizer
         )
-
         logger.info("*** Predict ***")
         predictions = trainer.predict(
             test_dataset=predict_dataset, test_examples=predict_datasets["validation"]

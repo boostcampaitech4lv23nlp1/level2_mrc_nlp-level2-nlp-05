@@ -17,6 +17,11 @@ data_args:
   retriever_type: 'elastic'  # base, faiss, elastic
   #use_faiss : False
   use_faiss : False
+
+    # Params for ElasticSearch
+  data_path: './dataset'
+  context_path: 'wikipedia_documents.json'
+  setting_path: "./retriever/setting.json"
   index_name : 'origin-wiki-multi'
 
 training_args:
@@ -30,11 +35,7 @@ training_args:
   logging_steps : 20
   eval_steps: 200
   evaluation_strategy : 'steps'
-  #save_strategy : 'epoch'
   overwrite_output_dir : True
   do_train : True
-  do_eval : False
-  # do_eval 근데 False라고 박아놧는데 자꾸 True로 들어감.. 왜일까
-  # evaluation strategy가 설정되어있으면 알아서 True로 들어간다고 함
-  # 추후에 inference용 config 파일이 필요할듯
+  do_eval : False # evaluation strategy가 있을시 자동으로 True로 설정됨
   do_predict : False
