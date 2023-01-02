@@ -8,8 +8,8 @@ from datasets import load_from_disk
 from transformers import (AutoTokenizer, BertModel, BertPreTrainedModel,
                           TrainingArguments)
 
-from utils.utils_dr import BaseDataset
-from trainer.trainer_dr import DenseRetrievalTrainer
+from retriever.dense_utils import BaseDataset
+from retriever.dense_trainer import DenseRetrievalTrainer
 
 
 class BertEncoder(BertPreTrainedModel):
@@ -44,7 +44,7 @@ def main(cfg):
     data_path = "./dataset/"
     context_path = "wikipedia_documents.json"
     data_args = cfg.data_args
-    training_args = cfg.training_args
+    train_args = cfg.training_args
     model_args = cfg.model_args
 
     model_name = model_args.dense_train_model_name
@@ -65,12 +65,12 @@ def main(cfg):
     args = TrainingArguments(
         output_dir="./dense_retireval",
         evaluation_strategy="epoch",
-        learning_rate=2e-5,
-        per_device_train_batch_size=8,
-        per_device_eval_batch_size=8,
-        num_train_epochs=20,
-        weight_decay=0.01,
-        gradient_accumulation_steps=8,
+        learning_rate=train_args.learning_rate,
+        per_device_train_batch_size=train_args.per_device_train_batch_size,
+        per_device_eval_batch_size=train_args.per_device_eval_batch_size,
+        num_train_epochs=train_args.num_train_epochs,
+        weight_decay=train_args.weight_decay,
+        gradient_accumulation_steps=train_args.gradient_accumulation_steps,
     )
 
     # Dense Retrieval Trainer

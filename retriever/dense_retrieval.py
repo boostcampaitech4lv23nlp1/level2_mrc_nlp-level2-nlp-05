@@ -8,7 +8,7 @@ from typing import Callable, Dict, List, NoReturn, Optional, Tuple
 
 import numpy as np
 import torch
-from datasets import load_from_disk
+from datasets import load_from_disk, concatenate_datasets
 from torch.utils.data import DataLoader, SequentialSampler, TensorDataset
 from tqdm import tqdm
 from transformers import AutoTokenizer, BertModel, BertPreTrainedModel
@@ -165,4 +165,14 @@ if __name__ == "__main__":
 
     query = "대통령을 포함한 미국의 행정부 견제권을 갖는 국가 기관은?"
 
-    print(retrieval.get_topk_doc_id_and_score(query, 100))
+    # print(retrieval.get_topk_doc_id_and_score(query, 100))
+    org_dataset = load_from_disk("./dataset/train_dataset")
+    full_ds = concatenate_datasets(
+        [
+            org_dataset["train"].flatten_indices(),
+            org_dataset["validation"].flatten_indices(),
+        ]
+    )
+    
+    print(len(full_ds))
+    print(full_ds[0])
