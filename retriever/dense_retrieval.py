@@ -29,12 +29,12 @@ class DenseRetrieval:
         indexer,
         p_encoder_path: Optional[str],
         q_encoder_path: Optional[str],
-        data_path: Optional[str] = "./dataset",
+        data_path: Optional[str] = "../dataset",
         context_path: Optional[str] = "wikipedia_documents.json",
     ) -> None:
 
         self.tokenizer = tokenizer
-        self.datasets = load_from_disk("./dataset/train_dataset/")
+        self.datasets = load_from_disk("../dataset/train_dataset/")
 
         with open(os.path.join(data_path, context_path), "r", encoding="utf-8") as f:
             self.wiki = json.load(f)

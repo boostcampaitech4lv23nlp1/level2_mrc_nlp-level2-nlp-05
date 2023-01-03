@@ -35,8 +35,12 @@ def main(cfg):
     train_path = data_args.train_dataset_name
     valid_path = data_args.valid_dataset_name
 
-    # train_dataset = BaseDataset(tokenizer=tokenizer, datapath=train_path) 
-    train_dataset = KorquadDataset(tokenizer=tokenizer, datapath=train_path) # KorquadDataset 추가
+    train_dataset = BaseDataset(tokenizer=tokenizer,
+                                datapath=train_path,
+                                in_batch_neg=train_args.in_batch_neg,
+                                num_neg=train_args.num_neg,
+                                hard_neg=train_args.hard_neg) 
+    # train_dataset = KorquadDataset(tokenizer=tokenizer, datapath=train_path) # KorquadDataset 추가
     valid_dataset = load_from_disk(dataset_path=valid_path)
 
     print("Train Dataset Length:", len(train_dataset))
@@ -77,6 +81,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, default="")
     args, _ = parser.parse_known_args()
-    cfg = OmegaConf.load(f"./config/{args.config}/dense_config.yaml")
+    cfg = OmegaConf.load(f"./config/{args.config}.yaml")
 
     main(cfg)

@@ -88,24 +88,27 @@ if __name__ == "__main__":
 
     elif args.retriever_type == "elastic":
         print("init elastic...")
-        retriever = ElasticRetrieval(index_name="origin-wiki-preprocessed")
-        #retriever.create_index('ai_hub')
+        retriever = ElasticRetrieval(index_name="squad")
+        retriever.check_index()
+        retriever.create_index()
         
         # dataset = load_dataset('sangmun2/ai_hub_qa_without_dup')
 
-        # with timer("single query by elastic search"):
-        #     scores, indices = retriever.retrieve(query, topk=1)
+        breakpoint()
 
-        with timer("bulk query by elastic search"):
-            df = retriever.retrieve(full_ds)
-            df["correct"] = df["original_context"] == df["context"]
-            print(
-                "correct retrieval result by elastic search",
-                df["correct"].sum() / len(df),
-            )
+        with timer("single query by elastic search"):
+            scores, docs = retriever.retrieve_HN(query, topk=2)
 
-            df.to_csv("elastic.csv")
-            # 0.57490458015267186 점
+        # with timer("bulk query by elastic search"):
+        #     df = retriever.retrieve(full_ds)
+        #     df["correct"] = df["original_context"] == df["context"]
+        #     print(
+        #         "correct retrieval result by elastic search",
+        #         df["correct"].sum() / len(df),
+        #     )
+
+        #     df.to_csv("elastic.csv")
+        #     # 0.57490458015267186 점
 
     else:
         retriever = SparseRetrieval(
