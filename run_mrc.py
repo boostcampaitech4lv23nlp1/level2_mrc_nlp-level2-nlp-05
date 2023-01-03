@@ -29,7 +29,7 @@ from transformers import (
 )
 from utils.utils_qa import check_no_error, postprocess_qa_predictions
 from data_loaders.data_loader import load_train_dataset, load_eval_dataset
-from run_sparse_retrieval import run_sparse_retrieval
+from run_retrieval import run_retrieval
 import wandb
 
 logger = logging.getLogger(__name__)
@@ -164,13 +164,17 @@ def run_mrc(
             predict_dir = os.path.join(training_dir, "pred")
             if not os.path.exists(predict_dir):
                 os.makedirs(predict_dir)
+
+            # retrieval tokenizer
+            retrieval_tokenizer = AutoTokenizer(model_args.retrieval_model_name)
             training_args.output_dir = predict_dir
-            predict_datasets = run_sparse_retrieval(
-                tokenizer.tokenize,
+            predict_datasets = run_retrieval(
+                retrieval_tokenizer,
                 test_datasets,
                 training_args,
                 data_args,
             )
+            
             predict_dataset = load_eval_dataset(
                 predict_datasets, max_seq_length, data_args, tokenizer
             )
@@ -185,20 +189,20 @@ def run_mrc(
                 "No metric can be presented because there is no correct answer given. Job done!"
             )
 
-    # # Evaluation # train 중 evaluatioin을 실시하면 do_eval 값이 자동으로 True로 들어감
-    # if training_args.do_eval and not training_args.do_train:
-    #     # Evaluate
-    #     training_dir = training_args.output_dir
-    #     eval_dir = os.path.join(training_dir, "eval")
-    #     if not os.path.exists(eval_dir):
-    #         os.makedirs(eval_dir)
-    #     training_args.output_dir = eval_dir
+    # Evaluation # train 중 evaluatioin을 실시하면 do_eval 값이 자동으로 True로 들어감
+    if training_args.do_eval and not training_args.do_train:
+        # Evaluate
+        training_dir = training_args.output_dir
+        eval_dir = os.path.join(training_dir, "eval")
+        if not os.path.exists(eval_dir):
+            os.makedirs(eval_dir)
+        training_args.output_dir = eval_dir
 
-    #     logger.info("*** Evaluate ***")
-    #     metrics = trainer.evaluate(eval_dataset)
-    #     metrics["eval_samples"] = len(eval_dataset)
-    #     trainer.log_metrics("eval", metrics)
-    #     trainer.save_metrics("eval", metrics)
+        logger.info("*** Evaluate ***")
+        metrics = trainer.evaluate(eval_dataset)
+        metrics["eval_samples"] = len(eval_dataset)
+        trainer.log_metrics("eval", metrics)
+        trainer.save_metrics("eval", metrics)
 
     #### eval dataset & eval example - predictions.json 생성됨
     if training_args.do_predict:
@@ -209,7 +213,7 @@ def run_mrc(
         if not os.path.exists(predict_dir):
             os.makedirs(predict_dir)
         training_args.output_dir = predict_dir
-        predict_datasets = run_sparse_retrieval(
+        predict_datasets = run_retrieval(
             tokenizer.tokenize,
             test_datasets,
             training_args,

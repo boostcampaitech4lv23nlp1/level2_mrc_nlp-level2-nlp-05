@@ -16,6 +16,7 @@ from datasets import (
 from retriever.sparse_retrieval import SparseRetrieval
 from retriever.faiss_retrieval import FaissRetrieval
 from retriever.elastic_retrieval import ElasticRetrieval
+from retriever.dense_retrieval import DenseRetrieval
 from trainer.trainer_qa import QuestionAnsweringTrainer
 from transformers import (
     AutoConfig,
@@ -30,7 +31,7 @@ from transformers import (
 from utils.utils_qa import check_no_error, postprocess_qa_predictions
 
 
-def run_sparse_retrieval(
+def run_retrieval(
     tokenize_fn: Callable[[str], List[str]],
     datasets: DatasetDict,
     training_args: TrainingArguments,
@@ -63,12 +64,18 @@ def run_sparse_retrieval(
             )
 
         df = retriever.retrieve(datasets["validation"], topk=data_args.top_k_retrieval)
-    else:
+    elif data_args.retriever_type == "base" :
         print(data_args.retriever_type)
         retriever = SparseRetrieval(
             tokenize_fn=tokenize_fn, data_path=data_path, context_path=context_path
         )
         retriever.get_sparse_embedding()
+        df = retriever.retrieve(datasets["validation"], topk=data_args.top_k_retrieval)
+    else : # DPR
+        print(data_args.retriever_type)
+        retriever = DenseRetrieval(
+            tokenize_fn=tokenize_fn, data_path=data_path, context_path=context_path
+        )
         df = retriever.retrieve(datasets["validation"], topk=data_args.top_k_retrieval)
 
     # test data 에 대해선 정답이 없으므로 id question context 로만 데이터셋이 구성됩니다.
