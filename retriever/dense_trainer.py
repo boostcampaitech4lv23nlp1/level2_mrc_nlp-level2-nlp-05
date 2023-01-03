@@ -354,10 +354,7 @@ class DenseRetrievalTrainer:
 
             wiki_iterator = tqdm(self.wiki_tokens, desc="Iteration")
             p_embs = []
-            # for p in wiki_iterator:
-            for idx, p in enumerate(wiki_iterator) :
-                if idx == 1000 :
-                    break
+            for p in wiki_iterator:
                 p_emb = p_encoder(**p).to("cpu").numpy()
                 p_embs.append(p_emb)
 
@@ -398,7 +395,7 @@ def main(cfg):
     train_path = data_args.train_dataset_name
     valid_path = data_args.valid_dataset_name
 
-    train_dataset = BaseDataset(tokenizer=tokenizer, datapath=valid_path) # 수정
+    train_dataset = BaseDataset(tokenizer=tokenizer, datapath=train_path)
     valid_dataset = load_from_disk(dataset_path=valid_path)
 
     print("Train Dataset Length:", len(train_dataset))
@@ -429,8 +426,6 @@ def main(cfg):
         train_dataset=train_dataset,
         valid_dataset=valid_dataset,
     )
-
-    DR_trainer.build_faiss(p_encoder_path='./retriever/saved_models/p_encoder', num_clusters=64)
 
 
 if __name__ == "__main__":

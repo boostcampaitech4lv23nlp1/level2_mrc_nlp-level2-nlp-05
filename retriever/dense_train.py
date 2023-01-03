@@ -73,6 +73,7 @@ def main(cfg):
     )
 
     DR_trainer.train()
+    DR_trainer.build_faiss(p_encoder_path='./retriever/saved_models/p_encoder', num_clusters=64)
 
 
 if __name__ == "__main__":

@@ -26,7 +26,7 @@ class DenseRetrieval:
     def __init__(
         self,
         tokenizer: Callable[[str], List[str]],
-        indexer,
+        indexer: Optional[str],
         p_encoder_path: Optional[str],
         q_encoder_path: Optional[str],
         data_path: Optional[str] = "../dataset",
@@ -39,21 +39,25 @@ class DenseRetrieval:
         with open(os.path.join(data_path, context_path), "r", encoding="utf-8") as f:
             self.wiki = json.load(f)
 
+        # dense_trainer와 똑같이 설정
         self.contexts = list(
-            dict.fromkeys([v["text"] for v in self.wiki.values()])
-        )  # set 은 매번 순서가 바뀌므로
+            set([self.wiki[str(i)]["text"] for i in range(len(self.wiki))])
+        )
         
         self.ids = list(range(len(self.contexts)))
         
-        # TODO : Faiss indexer
-        # self.indexer = faiss.read_index(indexer)
+        self.indexer = faiss.read_index(indexer)
         self.p_encoder = BertEncoder.from_pretrained(p_encoder_path)
         self.q_encoder = BertEncoder.from_pretrained(q_encoder_path)
         if torch.cuda.is_available():
             self.p_encoder.cuda()
             self.q_encoder.cuda()
 
+        
         dense_embedding_path = data_path + "dense_embedding.bin"
+
+        # for kodpr
+        # dense_embedding_path = data_path + "dense_embedding(kodpr).bin"
 
         if os.path.isfile(dense_embedding_path):
             with open(dense_embedding_path, "rb") as f:
@@ -144,13 +148,10 @@ class DenseRetrieval:
             queries = query_or_dataset["question"]
             total = []
 
-            print(len(queries))
             with timer("query bulk search"):
                 doc_scores, doc_indices = self.get_relevant_doc_bulk(
                     queries=queries, k=topk
                 )
-            # print(doc_scores)
-            # print(doc_indices)
 
             for idx, example in enumerate(
                 tqdm(query_or_dataset, desc="Dense retrieval: ")
@@ -468,12 +469,12 @@ if __name__ == "__main__":
     
     print(len(df.iloc[0]['context']))
     
-    # with timer("bulk query by faiss search"):
-    #     df = retrieval.retrieve_faiss(query_or_dataset=full_ds, topk=1)
-    #     correct_list = []
-    #     for i in range(len(df)) :
-    #         isInContext = df["original_context"].iloc[i] in df["context"].iloc[i]
-    #         correct_list.append(isInContext)
+    with timer("bulk query by faiss search"):
+        df = retrieval.retrieve_faiss(query_or_dataset=full_ds, topk=1)
+        correct_list = []
+        for i in range(len(df)) :
+            isInContext = df["original_context"].iloc[i] in df["context"].iloc[i]
+            correct_list.append(isInContext)
 
-    #     print("correct retrieval result by DPR", sum(correct_list) / len(df))
+        print("correct retrieval result by DPR", sum(correct_list) / len(df))
 
