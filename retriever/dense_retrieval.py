@@ -436,12 +436,14 @@ if __name__ == "__main__":
     model_name = model_args.dense_train_model_name
     tokenizer = AutoTokenizer.from_pretrained(model_name)
 
+    indexer_path = model_args.indexer_path
     p_encoder_path = model_args.p_encoder_path
     q_encoder_path = model_args.q_encoder_path
 
+
     retrieval = DenseRetrieval(
         tokenizer=tokenizer,
-        indexer='', # 추가 예정
+        indexer=indexer_path, # 추가 예정
         p_encoder_path=p_encoder_path,
         q_encoder_path=q_encoder_path,
         data_path=data_path,
@@ -466,8 +468,6 @@ if __name__ == "__main__":
             correct_list.append(isInContext)
 
         print("correct retrieval result by DPR", sum(correct_list) / len(df))
-    
-    print(len(df.iloc[0]['context']))
     
     with timer("bulk query by faiss search"):
         df = retrieval.retrieve_faiss(query_or_dataset=full_ds, topk=1)

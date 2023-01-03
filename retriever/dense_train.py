@@ -59,6 +59,7 @@ def main(cfg):
         num_train_epochs=train_args.num_train_epochs,
         weight_decay=train_args.weight_decay,
         gradient_accumulation_steps=train_args.gradient_accumulation_steps,
+        warmup_steps = train_args.warmup_steps,
     )
 
     # Dense Retrieval Trainer
@@ -80,8 +81,8 @@ if __name__ == "__main__":
     from omegaconf import OmegaConf
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, default="")
+    parser.add_argument("--config", type=str, default="dense_config")
     args, _ = parser.parse_known_args()
-    cfg = OmegaConf.load(f"./config/{args.config}.yaml")
+    cfg = OmegaConf.load(f"./retriever/config/{args.config}.yaml")
 
     main(cfg)

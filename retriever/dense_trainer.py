@@ -24,25 +24,25 @@ class DenseRetrievalTrainer:
         self.train_dataset = train_dataset
         self.valid_dataset = valid_dataset
 
-        # data_path = "../dataset/"
-        # context_path = "wikipedia_documents.json"
+        data_path = "./dataset/"
+        context_path = "wikipedia_documents.json"
 
-        # with open(os.path.join(data_path, context_path), "r", encoding="utf-8") as f:
-        #     self.wiki = json.load(f)
+        with open(os.path.join(data_path, context_path), "r", encoding="utf-8") as f:
+            self.wiki = json.load(f)
 
-        # self.wiki_corpus = list(
-        #     set([self.wiki[str(i)]["text"] for i in range(len(self.wiki))])
-        # )
+        self.wiki_corpus = list(
+            set([self.wiki[str(i)]["text"] for i in range(len(self.wiki))])
+        )
 
-        # wiki_iterator = tqdm(self.wiki_corpus, desc="Iteration")
-        # self.wiki_tokens = []
+        wiki_iterator = tqdm(self.wiki_corpus, desc="Iteration")
+        self.wiki_tokens = []
 
-        # print("Wiki documents Tokeniation")
-        # for p in wiki_iterator:
-        #     token = self.tokenizer(
-        #         p, padding="max_length", truncation=True, return_tensors="pt"
-        #     ).to("cuda")
-        #     self.wiki_tokens.append(token)
+        print("Wiki documents Tokeniation")
+        for p in wiki_iterator:
+            token = self.tokenizer(
+                p, padding="max_length", truncation=True, return_tensors="pt"
+            ).to("cuda")
+            self.wiki_tokens.append(token)
 
     # TODO : Set optimizer
     def set_optimizer():
@@ -327,12 +327,12 @@ class DenseRetrievalTrainer:
 
             print(f"Train_loss : {train_loss:.4f}\n")
 
-            if (epoch + 1) % 5 == 0:
+            if (epoch + 1) % 1 == 0:
                 top_1, top_5, top_10, top_30, top_50, top_100 = self.evaluation()
 
                 if top_100 > best_score:
                     self.p_encoder.save_pretrained("./retriever/saved_models/p_encoder")
-                    self.p_encoder.save_pretrained("./retriever/saved_models/q_encoder")
+                    self.q_encoder.save_pretrained("./retriever/saved_models/q_encoder")
 
                     best_score = top_100
 
