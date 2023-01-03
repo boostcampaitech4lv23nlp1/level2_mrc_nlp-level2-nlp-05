@@ -8,7 +8,7 @@ from typing import List, NoReturn, Optional, Tuple, Union
 import faiss
 import numpy as np
 import pandas as pd
-from datasets import Dataset, concatenate_datasets, load_from_disk
+from datasets import Dataset, concatenate_datasets, load_from_disk, load_dataset
 from sklearn.feature_extraction.text import TfidfVectorizer
 from tqdm.auto import tqdm
 from sparse_retrieval import SparseRetrieval
@@ -88,12 +88,13 @@ if __name__ == "__main__":
 
     elif args.retriever_type == "elastic":
         print("init elastic...")
-        retriever = ElasticRetrieval(
-            tokenize_fn=tokenizer.tokenize, index_name="origin-wiki-multi"
-        )
+        retriever = ElasticRetrieval(index_name="origin-wiki-preprocessed")
+        #retriever.create_index('ai_hub')
+        
+        # dataset = load_dataset('sangmun2/ai_hub_qa_without_dup')
 
-        with timer("single query by elastic search"):
-            scores, indices = retriever.retrieve(query)
+        # with timer("single query by elastic search"):
+        #     scores, indices = retriever.retrieve(query, topk=1)
 
         with timer("bulk query by elastic search"):
             df = retriever.retrieve(full_ds)
@@ -102,6 +103,7 @@ if __name__ == "__main__":
                 "correct retrieval result by elastic search",
                 df["correct"].sum() / len(df),
             )
+
             df.to_csv("elastic.csv")
             # 0.57490458015267186 점
 
