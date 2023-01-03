@@ -27,7 +27,7 @@ from run_mrc import run_mrc
 from run_sparse_retrieval import run_sparse_retrieval
 from omegaconf import OmegaConf
 
-from reader.cnn import Conv1DRobertaForQuestionAnswering
+from reader.cnn import Conv1DRobertaForQuestionAnswering, Conv1DDebertaV2ForQuestionAnswering
 
 logger = logging.getLogger(__name__)
 
@@ -69,16 +69,19 @@ def main(model_args, data_args, training_args):
         else model_args.model_name_or_path,
         use_fast=True,
     )
+    
     model = AutoModelForQuestionAnswering.from_pretrained(
         model_args.model_name_or_path,
         from_tf=bool(".ckpt" in model_args.model_name_or_path),
         config=config,
     )
-    """cnn
-    model = Conv1DRobertaForQuestionAnswering(
+    '''
+    model = Conv1DDebertaV2ForQuestionAnswering(
         model_args.model_name_or_path,
         config=config,
     )
+    '''
+    """
     load_model_path = './models/02-04-27/checkpoint-2000/pytorch_model.bin'
     checkpoint = torch.load(load_model_path)
     model.load_state_dict(checkpoint)

@@ -60,7 +60,7 @@ class ElasticRetrieval:
     def __init__(
         self,
         tokenize_fn,
-        data_path: Optional[str] = "../dataset/",
+        data_path: Optional[str] = "./dataset/",
         context_path: Optional[str] = "wikipedia_documents.json",
         setting_path: Optional[str] = "./retriever/setting.json",
         index_name: Optional[str] = "origin-wiki-multi",
