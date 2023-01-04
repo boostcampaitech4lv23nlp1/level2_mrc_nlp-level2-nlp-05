@@ -35,12 +35,20 @@ def main(cfg):
     train_path = data_args.train_dataset_name
     valid_path = data_args.valid_dataset_name
 
-    train_dataset = BaseDataset(tokenizer=tokenizer,
-                                datapath=train_path,
-                                in_batch_neg=train_args.in_batch_neg,
-                                num_neg=train_args.num_neg,
-                                hard_neg=train_args.hard_neg) 
-    # train_dataset = KorquadDataset(tokenizer=tokenizer, datapath=train_path) # KorquadDataset 추가
+    if data_args.dataset == 'basic':
+        train_dataset = BaseDataset(tokenizer=tokenizer,
+                                    datapath=train_path,
+                                    in_batch_neg=train_args.in_batch_neg,
+                                    num_neg=train_args.num_neg,
+                                    hard_neg=train_args.hard_neg) 
+
+    if data_args.dataset == 'squad':
+        train_dataset = KorquadDataset(tokenizer=tokenizer,
+                                    datapath=train_path,
+                                    in_batch_neg=train_args.in_batch_neg,
+                                    num_neg=train_args.num_neg,
+                                    hard_neg=train_args.hard_neg) # KorquadDataset 추가
+
     valid_dataset = load_from_disk(dataset_path=valid_path)
 
     print("Train Dataset Length:", len(train_dataset))
@@ -59,6 +67,7 @@ def main(cfg):
         num_train_epochs=train_args.num_train_epochs,
         weight_decay=train_args.weight_decay,
         gradient_accumulation_steps=train_args.gradient_accumulation_steps,
+        warmup_ratio=train_args.warmup_ratio
     )
 
     # Dense Retrieval Trainer

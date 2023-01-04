@@ -21,6 +21,7 @@ data_args:
   top_k_retrieval: 10
   retriever_type: 'faiss'  # base, faiss, elastic
   #use_faiss : False
+  dataset: 'basic'
 
 # DPR model training args
 # lr, batch_size, epochs, weight_decay, gradient
@@ -44,12 +45,9 @@ training_args:
   do_eval : False # 이거 근데 False라고 박아놧는데 자꾸 True로 들어감.. 왜일까
   do_predict : False
 
-  p_encoder_save_name : 'test'
-  q_encoder_save_name : 'test'
+  p_encoder_save_name : 'hard_neg'
+  q_encoder_save_name : 'hard_neg'
 
-  in_batch_neg : True
+  in_batch_neg : False
   num_neg : 7 # 2^n - 1
-  hard_neg : False
-
-
-        
+  hard_neg : True
