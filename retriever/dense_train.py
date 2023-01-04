@@ -8,7 +8,7 @@ from datasets import load_from_disk
 from transformers import (AutoTokenizer, BertModel, BertPreTrainedModel,
                           TrainingArguments)
 
-from dense_utils import BaseDataset, KorquadDataset
+from dense_utils import BaseDataset, KorquadDataset, BothDataset
 from dense_trainer import DenseRetrievalTrainer
 from dense_model import BertEncoder
 
@@ -48,6 +48,14 @@ def main(cfg):
                                     in_batch_neg=train_args.in_batch_neg,
                                     num_neg=train_args.num_neg,
                                     hard_neg=train_args.hard_neg) # KorquadDataset 추가
+
+    if data_args.dataset == 'both':
+        train_dataset = BothDataset(tokenizer=tokenizer,
+                                    datapath=train_path,
+                                    in_batch_neg=train_args.in_batch_neg,
+                                    num_neg=train_args.num_neg,
+                                    hard_neg=train_args.hard_neg) # BothDataset 추가
+
 
     valid_dataset = load_from_disk(dataset_path=valid_path)
 
@@ -91,6 +99,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, default="")
     args, _ = parser.parse_known_args()
-    cfg = OmegaConf.load(f"./retriever/config/{args.config}.yaml")
+    cfg = OmegaConf.load(f"./retriever/config/{args.config}dense_config.yaml")
 
     main(cfg)
