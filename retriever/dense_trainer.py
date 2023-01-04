@@ -25,7 +25,7 @@ class DenseRetrievalTrainer:
         self.train_dataset = train_dataset
         self.valid_dataset = valid_dataset
 
-        data_path = "../dataset/"
+        data_path = "./dataset/"
         context_path = "wikipedia_documents.json"
 
         with open(os.path.join(data_path, context_path), "r", encoding="utf-8") as f:
@@ -373,10 +373,7 @@ class DenseRetrievalTrainer:
 
             wiki_iterator = tqdm(self.wiki_tokens, desc="Iteration")
             p_embs = []
-            # for p in wiki_iterator:
-            for idx, p in enumerate(wiki_iterator) :
-                if idx == 1000 :
-                    break
+            for p in wiki_iterator:
                 p_emb = p_encoder(**p).to("cpu").numpy()
                 p_embs.append(p_emb)
 
@@ -399,68 +396,3 @@ class DenseRetrievalTrainer:
         indexer.add(p_emb)
         faiss.write_index(indexer, indexer_path) # 여기서 왜 에러나는 거임?
         print("Faiss Indexer Saved.")
-
-
-def main(cfg):
-    from transformers import AutoTokenizer, TrainingArguments
-    from dense_utils import BaseDataset
-    from datasets import load_from_disk
-
-    data_path = "./dataset/"
-    context_path = "wikipedia_documents.json"
-    data_args = cfg.data_args
-    train_args = cfg.training_args
-    model_args = cfg.model_args
-
-    model_name = model_args.dense_train_model_name
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    train_path = data_args.train_dataset_name
-    valid_path = data_args.valid_dataset_name
-
-    train_dataset = BaseDataset(tokenizer=tokenizer, datapath=valid_path) # 수정
-    valid_dataset = load_from_disk(dataset_path=valid_path)
-
-    print("Train Dataset Length:", len(train_dataset))
-    print("Valid Dataset Length:", len(valid_dataset))
-
-    p_encoder = BertEncoder.from_pretrained(model_name)
-    q_encoder = BertEncoder.from_pretrained(model_name)
-
-    # yaml
-    args = TrainingArguments(
-        output_dir="./dense_retireval",
-        evaluation_strategy="epoch",
-        learning_rate=train_args.learning_rate,
-        per_device_train_batch_size=train_args.per_device_train_batch_size,
-        per_device_eval_batch_size=train_args.per_device_eval_batch_size,
-        num_train_epochs=train_args.num_train_epochs,
-        weight_decay=train_args.weight_decay,
-        gradient_accumulation_steps=train_args.gradient_accumulation_steps,
-    )
-
-    # Dense Retrieval Trainer
-    DR_trainer = DenseRetrievalTrainer(
-        args=args,
-        cfg=cfg,
-        tokenizer=tokenizer,
-        p_encoder=p_encoder,
-        q_encoder=q_encoder,
-        train_dataset=train_dataset,
-        valid_dataset=valid_dataset,
-    )
-
-    DR_trainer.build_faiss(p_encoder_path='./retriever/saved_models/p_encoder', num_clusters=64)
-
-
-if __name__ == "__main__":
-    from omegaconf import OmegaConf
-    import argparse
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, default="")
-    args, _ = parser.parse_known_args()
-    cfg = OmegaConf.load(f"./config/{args.config}/dense_config.yaml")
-
-    main(cfg)
-
-    
