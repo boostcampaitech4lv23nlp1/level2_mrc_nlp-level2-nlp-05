@@ -82,6 +82,7 @@ def main(cfg):
     )
 
     DR_trainer.train()
+    DR_trainer.build_faiss(p_encoder_path='./retriever/saved_models/p_encoder', num_clusters=32)
 
 
 if __name__ == "__main__":
@@ -90,6 +91,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, default="")
     args, _ = parser.parse_known_args()
-    cfg = OmegaConf.load(f"./config/{args.config}.yaml")
+    cfg = OmegaConf.load(f"./retriever/config/{args.config}.yaml")
 
     main(cfg)
