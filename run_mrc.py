@@ -30,7 +30,7 @@ from transformers import (
     set_seed,
 )
 from utils.utils_qa import check_no_error, postprocess_qa_predictions
-from data_loaders.data_loader import load_train_dataset, load_eval_dataset
+from data_loaders.data_loader import load_train_dataset, load_eval_dataset, load_eval_train_dataset
 from run_sparse_retrieval import run_sparse_retrieval
 import wandb
 
@@ -47,13 +47,12 @@ def run_mrc(
     tokenizer,
     model,
 ) -> NoReturn:
-
     # 오류가 있는지 확인합니다.
     last_checkpoint, max_seq_length = check_no_error(data_args, training_args, datasets, tokenizer)
 
     train_dataset = load_train_dataset(datasets, max_seq_length, data_args, tokenizer)
     eval_dataset = load_eval_dataset(datasets, max_seq_length, data_args, tokenizer)
-
+    
     # Data collator
     # flag가 True이면 이미 max length로 padding된 상태입니다.
     # 그렇지 않다면 data collator에서 padding을 진행해야합니다.
@@ -150,7 +149,23 @@ def run_mrc(
         post_process_function=post_processing_function,
         compute_metrics=compute_metrics,
     )
-
+    '''
+    #train 난이도 평가
+    eval_train_dataset = load_eval_train_dataset(datasets, max_seq_length, data_args, tokenizer)
+    trainer2 = QuestionAnsweringTrainer(
+        model=model,
+        args=training_args,
+        train_dataset=eval_train_dataset,
+        eval_dataset=eval_train_dataset,
+        eval_examples=datasets["train"],
+        tokenizer=tokenizer,
+        data_collator=data_collator,
+        post_process_function=post_processing_function,
+        compute_metrics=compute_metrics,
+    )
+    trainer2.evaluate(eval_train_dataset)
+    '''
+    
     # Training
     if training_args.do_train:
         if last_checkpoint is not None:

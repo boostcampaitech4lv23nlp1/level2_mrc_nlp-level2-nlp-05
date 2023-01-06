@@ -94,6 +94,7 @@ def postprocess_qa_predictions(
         is_world_process_zero (:obj:`bool`, `optional`, defaults to :obj:`True`):
             이 프로세스가 main process인지 여부(logging/save를 수행해야 하는지 여부를 결정하는 데 사용됨)
     """
+    
     assert (
         len(predictions) == 2
     ), "`predictions` should be a tuple with two elements (start_logits, end_logits)."
@@ -214,7 +215,8 @@ def postprocess_qa_predictions(
         # offset을 사용하여 original context에서 answer text를 수집합니다.
         context = example["context"]
         for pred in predictions:
-            offsets = pred.pop("offsets")
+            offsets = pred["offsets"]
+            #pred["answer_offsets"] = (example['answers']['answer_start'][0], example['answers']['answer_start'][0]+len(example['answers']['text'][0]) )
             pred["text"] = context[offsets[0] : offsets[1]]
 
         # rare edge case에는 null이 아닌 예측이 하나도 없으며 failure를 피하기 위해 fake prediction을 만듭니다.
@@ -223,9 +225,9 @@ def postprocess_qa_predictions(
         ):
 
             predictions.insert(
-                0, {"text": "empty", "start_logit": 0.0, "end_logit": 0.0, "score": 0.0}
+                0, {"offsets": (0,0), "text": "empty", "start_logit": 0.0, "end_logit": 0.0, "score": 0.0}
             )
-
+        
         # 모든 점수의 소프트맥스를 계산합니다(we do it with numpy to stay independent from torch/tf in this file, using the LogSumExp trick).
         scores = np.array([pred.pop("score") for pred in predictions])
         exp_scores = np.exp(scores - np.max(scores))
