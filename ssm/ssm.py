@@ -7,7 +7,7 @@ from transformers import (
     DataCollatorForLanguageModeling,
 )
 import torch
-from transformers import Trainer, TrainingArguments
+from transformers import Trainer, TrainingArguments, DataCollatorWithPadding
 
 import argparse
 from omegaconf import OmegaConf
@@ -20,7 +20,31 @@ from random import randint
 from typing import Any, Callable, Dict, List, NewType, Optional, Tuple, Union
 import os
 import json
+from collections import defaultdict
 
+class MyDataCollatorWithPadding(DataCollatorWithPadding):
+    def __call__(self, features: List[Dict[str, Union[List[int], torch.Tensor]]]) -> Dict[str, torch.Tensor]:
+        max_len = 0
+        for i in features:
+            if len(i["input_ids"]) > max_len:
+                max_len = len(i["input_ids"])
+        
+        batch = defaultdict(list)
+        for item in features:
+            for k in item:
+                item[k] = torch.Tensor(item[k])
+                padding_len = max_len - item[k].size(0)
+                if k == "input_ids":
+                    item[k] = torch.cat((item[k], torch.tensor([self.tokenizer.pad_token_id] * padding_len)), dim=0)
+                else:
+                    item[k] = torch.cat((item[k], torch.tensor([0] * padding_len)), dim=0)
+                batch[k].append(item[k])
+
+        for k in batch:
+            batch[k] = torch.stack(batch[k], dim=0)
+            batch[k] = batch[k].to(torch.long)
+        
+        return batch
 
 def load_data():  # 위키피디아 데이터에서 entity를 찾아 마스킹합니다.
     dataset_path = "../dataset/wikipedia_documents.json"
@@ -66,7 +90,7 @@ def make_data():
         json.dump(load_data(), f)
 
         
-def load_eval_dataset(tokenizer, datasets):
+def load_ssm_dataset(tokenizer, datasets):
     # preprocessing
     def prepare_validation_features(examples):
         # truncation과 padding(length가 짧을때만)을 통해 toknization을 진행하며, stride를 이용하여 overflow를 유지합니다.
@@ -96,37 +120,38 @@ def load_eval_dataset(tokenizer, datasets):
 def ssm_pretrain():
     model_name = 'klue/roberta-large'
 
+    # set up tokenizer
+    tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
+
     if not os.path.exists('../dataset/wikipedia_documents_ssm.json'):
         print("make data")
         make_data()
-    dataset = load_dataset("json", data_files="../dataset/wikipedia_documents_ssm.json")
-    train_dataset = load_eval_dataset(tokenizer, dataset)
+    dataset = load_dataset("json", data_files="../dataset/wikipedia_documents_ssm_qa2.json")
+    train_dataset = load_ssm_dataset(tokenizer, dataset)
 
-    # set up tokenizer
-    tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
-    
     # Pretrained model for MaskedLM training
     model_config = AutoConfig.from_pretrained(model_name)  # 모델 가중치 불러오기
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = AutoModelForMaskedLM.from_pretrained(model_name, config=model_config)
+    #model = AutoModelForMaskedLM.from_pretrained('klue-roberta-pretrained3')
     model.resize_token_embeddings(len(tokenizer))
     model.parameters
     model.to(device)
 
-    data_collator = DataCollatorWithPadding(tokenizer)
+    data_collator = MyDataCollatorWithPadding(tokenizer)
 
     # cuda out-of-memory 발생하여 fp16 = True 로 변경
     training_args = TrainingArguments(
-        output_dir="./klue-roberta-pretrained",
+        output_dir="./klue-roberta-pretrained_qa2",
         learning_rate=3e-05,
-        num_train_epochs=2,
-        per_device_train_batch_size=16,
-        per_device_eval_batch_size=16,
-        save_steps=4000,
-        save_total_limit=2,
+        num_train_epochs=1,
+        per_device_train_batch_size=8,
+        per_device_eval_batch_size=8,
+        save_steps=5000,
+        save_total_limit=1,
         save_strategy="steps",
         logging_dir="./logs",
-        logging_steps=100,
+        logging_steps=200,
         fp16=True, # 16비트로 변환
         fp16_opt_level="O1",
         resume_from_checkpoint=True
@@ -140,7 +165,7 @@ def ssm_pretrain():
     )
 
     trainer.train()
-    model.save_pretrained("./klue-roberta-pretrained")  # pretrained_model save
+    model.save_pretrained("./klue-roberta-pretrained_qa2")  # pretrained_model save
 
 if __name__ == "__main__":
     ssm_pretrain()
