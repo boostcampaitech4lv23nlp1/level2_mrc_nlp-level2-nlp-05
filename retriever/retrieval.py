@@ -8,7 +8,7 @@ from typing import List, NoReturn, Optional, Tuple, Union
 import faiss
 import numpy as np
 import pandas as pd
-from datasets import Dataset, concatenate_datasets, load_from_disk
+from datasets import Dataset, concatenate_datasets, load_from_disk, load_dataset
 from sklearn.feature_extraction.text import TfidfVectorizer
 from tqdm.auto import tqdm
 from sparse_retrieval import SparseRetrieval
@@ -88,22 +88,27 @@ if __name__ == "__main__":
 
     elif args.retriever_type == "elastic":
         print("init elastic...")
-        retriever = ElasticRetrieval(
-            tokenize_fn=tokenizer.tokenize, index_name="origin-wiki-multi"
-        )
+        retriever = ElasticRetrieval(index_name="squad")
+        retriever.check_index()
+        retriever.create_index()
+        
+        # dataset = load_dataset('sangmun2/ai_hub_qa_without_dup')
+
+        breakpoint()
 
         with timer("single query by elastic search"):
-            scores, indices = retriever.retrieve(query)
+            scores, docs = retriever.retrieve_HN(query, topk=2)
 
-        with timer("bulk query by elastic search"):
-            df = retriever.retrieve(full_ds)
-            df["correct"] = df["original_context"] == df["context"]
-            print(
-                "correct retrieval result by elastic search",
-                df["correct"].sum() / len(df),
-            )
-            df.to_csv("elastic.csv")
-            # 0.57490458015267186 점
+        # with timer("bulk query by elastic search"):
+        #     df = retriever.retrieve(full_ds)
+        #     df["correct"] = df["original_context"] == df["context"]
+        #     print(
+        #         "correct retrieval result by elastic search",
+        #         df["correct"].sum() / len(df),
+        #     )
+
+        #     df.to_csv("elastic.csv")
+        #     # 0.57490458015267186 점
 
     else:
         retriever = SparseRetrieval(

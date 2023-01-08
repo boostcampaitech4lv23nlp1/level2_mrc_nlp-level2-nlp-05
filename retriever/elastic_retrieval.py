@@ -7,7 +7,7 @@ from typing import List, NoReturn, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
-from datasets import Dataset, concatenate_datasets, load_from_disk
+from datasets import Dataset, concatenate_datasets, load_from_disk, load_dataset
 from sklearn.feature_extraction.text import TfidfVectorizer
 from tqdm.auto import tqdm
 import unicodedata
@@ -44,7 +44,7 @@ def load_data(dataset_path):
 		wiki = json.load(f)
 
 	# wiki document에서 normal document 만 사용할 떄
-	# wiki_texts = list(dict.fromkeys([v["text"] for v in wiki.values()]))
+	wiki_texts = list(dict.fromkeys([v["text"] for v in wiki.values()]))
 
 	# # wiki document에서 전처리를 진행할 때
 	# wiki_texts = list(dict.fromkeys([preprocess(v["text"]) for v in wiki.values()]))
@@ -56,17 +56,17 @@ def load_data(dataset_path):
 	# wiki_texts = list(dict.fromkeys([' '.join([v["title"], v["text"]]) for v in wiki.values()]))
 
 	# # wiki document에서 제목 + 전각문자 처리
-	wiki_texts = list(dict.fromkeys([' '.join([v["title"], unicodedata.normalize('NFKC', v["text"])]) for v in wiki.values()]))
+	# wiki_texts = list(dict.fromkeys([' '.join([v["title"], unicodedata.normalize('NFKC', v["text"])]) for v in wiki.values()]))
 
 	wiki_texts = [text for text in wiki_texts]
 	wiki_corpus = [{"document_text":wiki_texts[i]} for i in range(len(wiki_texts))]
 	return wiki_corpus
 
 def es_search(es, index_name, question, topk):
-    # question = "대통령을 포함한 미국의 행정부 견제권을 갖는 국가 기관은?"
-    query = {"query": {"bool": {"must": [{"match": {"document_text": question}}]}}}
-    res = es.search(index=index_name, body=query, size=topk)
-    return res
+
+	query = {"query": {"bool": {"must": [{"match": {"document_text": question}}]}}}
+	res = es.search(index=index_name, body=query, size=topk)
+	return res
 
 
 class ElasticRetrieval:
@@ -85,45 +85,127 @@ class ElasticRetrieval:
 		self.data_path = './dataset' if data_path is None else data_path
 		self.context_path = 'wikipedia_documents.json' if context_path is None else context_path
 		self.setting_path = './retriever/setting.json' if setting_path is None else setting_path
+		self.index_name = index_name
 
-		if self.es.indices.exists(index=index_name) and (self.es.count(index=index_name)['count'] > 10000):
-			# index_name이 현재 존재하고 제대로 데이터가 삽입이 된 상태일때(10000개 이상정도면 이상 없다고 판단)
-			self.index_name = index_name
-			print(f' ### {index_name} 에서 search를 시작합니다 ###')
-			print(f" {index_name} 총 데이터 개수 : {self.es.count(index=self.index_name)['count']}")
+		not_wiki_dataset = ['basic_dataset','squad','ai_hub']
 
+		# wiki_document.json 전용 elastic search document 삽입 코드
+		if index_name not in not_wiki_dataset:
+			if self.es.indices.exists(index=index_name) and (self.es.count(index=index_name)['count'] > 1000):
+				# index_name이 현재 존재하고 제대로 데이터가 삽입이 된 상태일때(1000개 이상정도면 이상 없다고 판단)
+				self.index_name = index_name
+				print(f' ### {index_name} 에서 search를 시작합니다 ###')
+				print(f" {index_name} 총 데이터 개수 : {self.es.count(index=self.index_name)['count']}")
+
+			else:
+				if self.es.indices.exists(index=index_name): self.es.indices.delete(index=index_name)
+
+				with open(self.setting_path, "r") as f:
+					setting = json.load(f)
+				self.es.indices.create(index=index_name, body=setting)
+				self.index_name = index_name
+				print("Index creation has been completed")
+
+				wiki_corpus = load_data(os.path.join(self.data_path, self.context_path))
+
+				print(f' ### {index_name} 에 데이터를 삽입합니다. ###')
+				print(f' 총 데이터 개수 : {len(wiki_corpus)}')
+
+				for i, text in enumerate(tqdm(wiki_corpus)):
+					try:
+						self.es.index(index=index_name, id=i, body=text)
+					except:
+						print(f"Unable to load document {i}.")
+
+				n_records = self.es.count(index=index_name)["count"]
+				print(f'Successfully loaded {n_records} into {index_name}')
+				print("@@@@@@@@@ 데이터 삽입 완료 @@@@@@@@@")
+		
+	def check_index(self):
+		
+		index_name = self.index_name
+		if self.es.indices.exists(index=index_name):
+			print(f' @#@#@# {index_name} is aleray exist in elastic search @#@#@# ')
+			return True
 		else:
-			
-			if self.es.indices.exists(index=index_name): self.es.indices.delete(index=index_name)
+			print(f'{index_name} is not aleray exist in elastic search')
+			print(f' Creating \'{index_name}\' in elastic search ')
+			self.create_index()
+	
+	def create_index(self):
 
-			with open(self.setting_path, "r") as f:
-				setting = json.load(f)
-			self.es.indices.create(index=index_name, body=setting)
-			self.index_name = index_name
-			print("Index creation has been completed")
+		index_name = self.index_name
 
-			wiki_corpus = load_data(os.path.join(self.data_path, self.context_path))
-			breakpoint()
+		assert index_name in ['basic_dataset','squad','ai_hub'], \
+		'hard_negative용 index는 \[\'basic_dataset\',\'squad\',\'aihub\'] 중에 하나여야 합니다.'
 
-			print(f' ### {index_name} 에 데이터를 삽입합니다. ###')
-			print(f' 총 데이터 개수 : {len(wiki_corpus)}')
+		try:
+			self.es.indices.delete(index=index_name)
+		except:
+			pass
 
-			for i, text in enumerate(tqdm(wiki_corpus)):
-				try:
-					self.es.index(index=index_name, id=i, body=text)
-				except:
-					print(f"Unable to load document {i}.")
+		setting_path = 'setting.json'
+		with open(setting_path, "r") as f:
+			setting = json.load(f)
 
-			n_records = self.es.count(index=index_name)["count"]
-			print(f'Successfully loaded {n_records} into {index_name}')
-			print("@@@@@@@@@ 데이터 삽입 완료 @@@@@@@@@")
+		self.es.indices.create(index=index_name, body=setting)
+		self.index_name = index_name
+		print("Index creation has been completed")
+
+		if index_name == 'basic_dataset':
+
+			dataset = load_from_disk('../dataset/train_dataset')
+			dataset = concatenate_datasets(
+				[
+					dataset["train"].flatten_indices(),
+					dataset["validation"].flatten_indices(),
+				]
+			)
+
+			dataset_corpus = list(dict.fromkeys([each for each in dataset['context']]))
+
+		elif index_name == 'squad':
+
+			dataset = load_dataset('sangmun2/squad_train')
+			dataset_corpus = list(dict.fromkeys([each for each in dataset['train']['context']]))
+
+		elif index_name == 'ai_hub':
+
+			dataset = load_dataset('sangmun2/ai_hub_qa_without_dup')
+			dataset_corpus = list(dict.fromkeys([each for each in dataset['train']['context']]))
+		
+		dataset_corpus = [{"document_text":dataset_corpus[i]} for i in range(len(dataset_corpus))]
+
+		print(f' ### {index_name} 에 데이터를 삽입합니다. ###')
+		print(f' 총 데이터 개수 : {len(dataset_corpus)}')
+
+		for i, text in enumerate(tqdm(dataset_corpus)):
+			try:
+				self.es.index(index=index_name, id=i, body=text)
+			except:
+				print(f"Unable to load document {i}.")
+
+		n_records = self.es.count(index=index_name)["count"]
+		print(f'Successfully loaded {n_records} into {index_name}')
+		print("@@@@@@@@@ 데이터 삽입 완료 @@@@@@@@@")
+
+	def retrieve_HN(
+			self, query_or_dataset: Union[str, Dataset], topk: Optional[int] = 1
+		) -> Union[Tuple[List, List], pd.DataFrame]:
+
+		if isinstance(query_or_dataset, str):
+			doc_scores, doc_indices, docs = self.get_relevant_doc(
+				query_or_dataset, k=topk
+			)
+	
+			return (doc_scores, [each['_source']['document_text'] for each in docs])
 
 	def retrieve(
 		self, query_or_dataset: Union[str, Dataset], topk: Optional[int] = 1
 	) -> Union[Tuple[List, List], pd.DataFrame]:
 
 		if isinstance(query_or_dataset, str):
-			doc_scoresm, doc_indices, docs = self.get_relevant_doc(
+			doc_scores, doc_indices, docs = self.get_relevant_doc(
 				query_or_dataset, k=topk
 			)
 			print("[Search query]\n", query_or_dataset, '\n')
@@ -170,13 +252,13 @@ class ElasticRetrieval:
 	def get_relevant_doc(self, query: str, k: Optional[int] =1) -> Tuple[List, List]:
 		doc_score = []
 		doc_index = []
-		res = es_search(self.ex, self.index_name, query, k)
+		res = es_search(self.es, self.index_name, query, k)
 		docs = res["hits"]["hits"]
 
 		for hit in docs:
 			doc_score.append(hit["_score"])
 			doc_index.append(hit["_id"])
-			print("Doc ID: %3r  Score: %5.2f" % (hit["_id"], hit["_score"]))
+			#print("Doc ID: %3r  Score: %5.2f" % (hit["_id"], hit["_score"]))
 		
 		return doc_score, doc_index, docs
 	
