@@ -3,7 +3,7 @@ import os
 
 import torch
 import torch.nn.functional as F
-from torch.utils.data import DataLoader, RandomSampler
+from torch.utils.data import DataLoader, RandomSampler, TensorDataset
 from tqdm import tqdm
 from transformers import AdamW, get_linear_schedule_with_warmup
 from transformers.utils import logging
@@ -11,6 +11,7 @@ import faiss
 import numpy as np
 from datetime import datetime
 from dense_model import BertEncoder
+import pickle
 
 class DenseRetrievalTrainer:
     def __init__(
@@ -31,22 +32,11 @@ class DenseRetrievalTrainer:
             self.wiki = json.load(f)
 
         self.wiki_corpus = list(
-            set([self.wiki[str(i)]["text"] for i in range(len(self.wiki))])
-        )
-
-        wiki_iterator = tqdm(self.wiki_corpus, desc="Iteration")
-        self.wiki_tokens = []
-
-        print("Wiki documents Tokeniation")
-        for p in wiki_iterator:
-            token = self.tokenizer(
-                p, padding="max_length", truncation=True, return_tensors="pt"
-            ).to("cuda")
-            self.wiki_tokens.append(token)
-
-    # TODO : Set optimizer
-    def set_optimizer():
-        pass
+                set([self.wiki[str(i)]["text"] for i in range(len(self.wiki))])
+            )
+        print("wiki document tokenizing")
+        self.wiki_tokens = self.tokenizer(self.wiki_corpus, padding="max_length", truncation=True, return_tensors="pt")
+        print("wiki document tokenizing done")
 
     def train_per_epoch(self, epoch_iterator: DataLoader, optimizer, scheduler):
         # loss 계산
@@ -87,7 +77,7 @@ class DenseRetrievalTrainer:
                 sim_scores = torch.bmm(q_outputs, torch.transpose(p_outputs, 1, 2)).squeeze()  #(batch_size, num_neg + 1)
                 sim_scores = sim_scores.view(self.args.per_device_train_batch_size, -1)
                 sim_scores = F.log_softmax(sim_scores, dim=1)
-                
+
                 loss = F.nll_loss(sim_scores, targets)
 
                 batch_loss += loss.item()
@@ -102,7 +92,11 @@ class DenseRetrievalTrainer:
                 scheduler.step()
                 self.p_encoder.zero_grad()
                 self.q_encoder.zero_grad()
-                
+
+                epoch_iterator.set_description("Loss %.04f step %d" % (loss, train_step))
+                # lr = scheduler.optimizer.param_groups[0]['lr']
+                # print(lr)
+
                 del p_inputs, q_inputs
 
             torch.cuda.empty_cache()
@@ -159,6 +153,8 @@ class DenseRetrievalTrainer:
                 self.p_encoder.zero_grad()
                 self.q_encoder.zero_grad()
                 
+                epoch_iterator.set_description("Loss %.04f step %d" % (loss, train_step))
+
                 del p_inputs, q_inputs
                 
             torch.cuda.empty_cache()
@@ -215,6 +211,8 @@ class DenseRetrievalTrainer:
                 self.p_encoder.zero_grad()
                 self.q_encoder.zero_grad()
 
+                del p_inputs, q_inputs
+
             torch.cuda.empty_cache()
             return batch_loss / len(epoch_iterator)
 
@@ -235,13 +233,28 @@ class DenseRetrievalTrainer:
             ).to("cuda")
             q_emb = self.q_encoder(**q_seqs_val).to("cpu")  # (num_query, emb_dim)
 
-            wiki_iterator = tqdm(self.wiki_tokens, desc="Iteration")
+            wiki_iterator = TensorDataset(
+                self.wiki_tokens["input_ids"], self.wiki_tokens["attention_mask"], self.wiki_tokens["token_type_ids"],
+            )
+            wiki_dataloader = DataLoader(wiki_iterator, batch_size=64)
+            
             p_embs = []
-            for p in wiki_iterator:
-                p_emb = self.p_encoder(**p).to("cpu").numpy()
-                p_embs.append(p_emb)
+            for p in tqdm(wiki_dataloader):
 
-            p_embs = torch.Tensor(p_embs).squeeze()  # (num_passage, emb_dim)
+                if torch.cuda.is_available():
+                    p = tuple(t.cuda() for t in p)
+                
+                p_inputs = {
+                    "input_ids": p[0],
+                    "attention_mask": p[1],
+                    "token_type_ids": p[2],
+                }
+
+                p_emb = self.p_encoder(**p_inputs)
+                p_embs.append(p_emb)
+            
+            p_embs = torch.cat(p_embs, dim=0).view(len(wiki_iterator), -1)
+            p_embs = p_embs.to('cpu') # (num_passage, emb_dim)
 
             dot_prod_scores = torch.matmul(q_emb, torch.transpose(p_embs, 0, 1))
 
@@ -300,8 +313,8 @@ class DenseRetrievalTrainer:
         ]
 
         optimizer = AdamW(optimizer_grouped_parameters, lr=self.args.learning_rate, eps=self.args.adam_epsilon)
-        t_total = (len(train_dataloader) // self.args.gradient_accumulation_steps * self.args.num_train_epochs)
-        scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=self.args.warmup_steps, num_training_steps=t_total)
+        t_total = (len(train_dataloader) * self.args.num_train_epochs)
+        scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=t_total*self.args.warmup_ratio, num_training_steps=t_total)
 
         # Start training!
         global_step = 0
@@ -319,7 +332,7 @@ class DenseRetrievalTrainer:
 
         for epoch in train_iterator:
             epoch_iterator = tqdm(train_dataloader, desc="Iteration", leave=True)
-
+            
             # train per epoch
             train_loss = self.train_per_epoch(
                 epoch_iterator=epoch_iterator, optimizer=optimizer, scheduler=scheduler
@@ -331,8 +344,8 @@ class DenseRetrievalTrainer:
                 top_1, top_5, top_10, top_30, top_50, top_100 = self.evaluation()
 
                 if top_100 > best_score:
-                    self.p_encoder.save_pretrained("./retriever/saved_models/p_encoder")
-                    self.q_encoder.save_pretrained("./retriever/saved_models/q_encoder")
+                    self.p_encoder.save_pretrained("./retriever/saved_models/p_encoder_{args.cfg.training_args.p_encoder_save_name}")
+                    self.q_encoder.save_pretrained("./retriever/saved_models/q_encoder_{args.cfg.training_args.q_encoder_save_name}")
 
                     best_score = top_100
 
@@ -438,5 +451,3 @@ if __name__ == "__main__":
     cfg = OmegaConf.load(f"./config/{args.config}/dense_config.yaml")
 
     main(cfg)
-
-    
