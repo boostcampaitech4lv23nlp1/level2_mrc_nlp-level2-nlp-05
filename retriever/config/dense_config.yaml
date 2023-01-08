@@ -3,13 +3,14 @@ model_args:
   dense_train_model_name: 'klue/bert-base' # DPR Encoder model name 추가
   p_encoder_path: './retriever/saved_models/p_encoder'
   q_encoder_path: './retriever/saved_models/q_encoder'
+  indexer_path: './retriever/dpr_model/faiss_clusters64_29-23-52.index'
   config_name: 
   tokenizer_name:
 
 data_args:
   dataset_name: './dataset/train_dataset'
-  train_dataset_name: '../dataset/train_dataset/train'
-  valid_dataset_name: '../dataset/train_dataset/validation'
+  train_dataset_name: './dataset/train_dataset/train'
+  valid_dataset_name: './dataset/train_dataset/validation'
   overwrite_cache: False
   preprocessing_num_workers:
   max_seq_length: 384
@@ -48,7 +49,7 @@ training_args:
   q_encoder_save_name : 'test'
 
   in_batch_neg : True
-  num_neg : 7 # 2^n - 1
+  num_neg : 3 # 2^n - 1
   hard_neg : False
 
 

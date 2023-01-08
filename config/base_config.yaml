@@ -1,8 +1,10 @@
 model_args:
-  model_name_or_path : 'klue/roberta-large'
+  model_name_or_path : 'Sangmun/mrc-klue-roberta-large'
   config_name:
-  tokenizer_name:
-
+  tokenizer_name: 'klue/roberta-large'
+# monologg/koelectra-base-v3-discriminator
+# lighthouse/mdeberta-v3-base-kor-further
+# Sangmun/mrc-klue-roberta-large
 data_args:
   dataset_name: './dataset/train_dataset'
   overwrite_cache: False
@@ -36,6 +38,6 @@ training_args:
   eval_steps: 200
   evaluation_strategy : 'steps'
   overwrite_output_dir : True
-  do_train : True
+  do_train : False
   do_eval : False # evaluation strategy가 있을시 자동으로 True로 설정됨
-  do_predict : False
+  do_predict : True

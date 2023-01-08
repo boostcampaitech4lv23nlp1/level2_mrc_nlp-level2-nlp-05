@@ -34,15 +34,9 @@ class DenseRetrievalTrainer:
         self.wiki_corpus = list(
                 set([self.wiki[str(i)]["text"] for i in range(len(self.wiki))])
             )
-        
         print("wiki document tokenizing")
         self.wiki_tokens = self.tokenizer(self.wiki_corpus, padding="max_length", truncation=True, return_tensors="pt")
         print("wiki document tokenizing done")
-
-
-    # TODO : Set optimizer
-    def set_optimizer():
-        pass
 
     def train_per_epoch(self, epoch_iterator: DataLoader, optimizer, scheduler):
         # loss 계산
@@ -346,12 +340,12 @@ class DenseRetrievalTrainer:
 
             print(f"Train_loss : {train_loss:.4f}\n")
 
-            if (epoch + 1) % 5 == 0:
+            if (epoch + 1) % 1 == 0:
                 top_1, top_5, top_10, top_30, top_50, top_100 = self.evaluation()
 
                 if top_100 > best_score:
-                    self.p_encoder.save_pretrained("./retriever/saved_models/p_encoder_{cfg.training_args.p_encoder_save_name}")
-                    self.q_encoder.save_pretrained("./retriever/saved_models/q_encoder_{cfg.training_args.q_encoder_save_name}")
+                    self.p_encoder.save_pretrained("./retriever/saved_models/p_encoder_{args.cfg.training_args.p_encoder_save_name}")
+                    self.q_encoder.save_pretrained("./retriever/saved_models/q_encoder_{args.cfg.training_args.q_encoder_save_name}")
 
                     best_score = top_100
 
@@ -396,3 +390,64 @@ class DenseRetrievalTrainer:
         indexer.add(p_emb)
         faiss.write_index(indexer, indexer_path) # 여기서 왜 에러나는 거임?
         print("Faiss Indexer Saved.")
+
+
+def main(cfg):
+    from transformers import AutoTokenizer, TrainingArguments
+    from dense_utils import BaseDataset
+    from datasets import load_from_disk
+
+    data_path = "./dataset/"
+    context_path = "wikipedia_documents.json"
+    data_args = cfg.data_args
+    train_args = cfg.training_args
+    model_args = cfg.model_args
+
+    model_name = model_args.dense_train_model_name
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    train_path = data_args.train_dataset_name
+    valid_path = data_args.valid_dataset_name
+
+    train_dataset = BaseDataset(tokenizer=tokenizer, datapath=train_path)
+    valid_dataset = load_from_disk(dataset_path=valid_path)
+
+    print("Train Dataset Length:", len(train_dataset))
+    print("Valid Dataset Length:", len(valid_dataset))
+
+    p_encoder = BertEncoder.from_pretrained(model_name)
+    q_encoder = BertEncoder.from_pretrained(model_name)
+
+    # yaml
+    args = TrainingArguments(
+        output_dir="./dense_retireval",
+        evaluation_strategy="epoch",
+        learning_rate=train_args.learning_rate,
+        per_device_train_batch_size=train_args.per_device_train_batch_size,
+        per_device_eval_batch_size=train_args.per_device_eval_batch_size,
+        num_train_epochs=train_args.num_train_epochs,
+        weight_decay=train_args.weight_decay,
+        gradient_accumulation_steps=train_args.gradient_accumulation_steps,
+    )
+
+    # Dense Retrieval Trainer
+    DR_trainer = DenseRetrievalTrainer(
+        args=args,
+        cfg=cfg,
+        tokenizer=tokenizer,
+        p_encoder=p_encoder,
+        q_encoder=q_encoder,
+        train_dataset=train_dataset,
+        valid_dataset=valid_dataset,
+    )
+
+
+if __name__ == "__main__":
+    from omegaconf import OmegaConf
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--config", type=str, default="")
+    args, _ = parser.parse_known_args()
+    cfg = OmegaConf.load(f"./config/{args.config}/dense_config.yaml")
+
+    main(cfg)

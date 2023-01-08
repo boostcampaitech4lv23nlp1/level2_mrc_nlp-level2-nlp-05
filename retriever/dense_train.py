@@ -76,7 +76,7 @@ def main(cfg):
         weight_decay=train_args.weight_decay,
         gradient_accumulation_steps=train_args.gradient_accumulation_steps,
         warmup_ratio=train_args.warmup_ratio
-    )
+        )
 
     # Dense Retrieval Trainer
     DR_trainer = DenseRetrievalTrainer(
@@ -97,8 +97,8 @@ if __name__ == "__main__":
     from omegaconf import OmegaConf
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, default="")
+    parser.add_argument("--config", type=str, default="dense_config")
     args, _ = parser.parse_known_args()
-    cfg = OmegaConf.load(f"./retriever/config/{args.config}dense_config.yaml")
+    cfg = OmegaConf.load(f"./retriever/config/{args.config}.yaml")
 
     main(cfg)
