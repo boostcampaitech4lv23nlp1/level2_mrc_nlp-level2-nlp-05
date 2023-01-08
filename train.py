@@ -24,7 +24,7 @@ from transformers import (
 from utils.utils_qa import check_no_error, postprocess_qa_predictions
 from data_loaders.data_loader import load_train_dataset, load_eval_dataset
 from run_mrc import run_mrc
-from run_sparse_retrieval import run_sparse_retrieval
+from run_retrieval import run_retrieval
 from omegaconf import OmegaConf
 
 from reader.cnn import (
