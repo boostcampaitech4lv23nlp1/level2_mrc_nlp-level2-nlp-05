@@ -8,7 +8,7 @@ from datasets import load_from_disk
 from transformers import (AutoTokenizer, BertModel, BertPreTrainedModel,
                           TrainingArguments)
 
-from dense_utils import BaseDataset, KorquadDataset
+from dense_utils import BaseDataset, KorquadDataset, BothDataset
 from dense_trainer import DenseRetrievalTrainer
 from dense_model import BertEncoder
 
@@ -35,12 +35,28 @@ def main(cfg):
     train_path = data_args.train_dataset_name
     valid_path = data_args.valid_dataset_name
 
-    train_dataset = BaseDataset(tokenizer=tokenizer,
-                                datapath=train_path,
-                                in_batch_neg=train_args.in_batch_neg,
-                                num_neg=train_args.num_neg,
-                                hard_neg=train_args.hard_neg) 
-    # train_dataset = KorquadDataset(tokenizer=tokenizer, datapath=train_path) # KorquadDataset 추가
+    if data_args.dataset == 'basic':
+        train_dataset = BaseDataset(tokenizer=tokenizer,
+                                    datapath=train_path,
+                                    in_batch_neg=train_args.in_batch_neg,
+                                    num_neg=train_args.num_neg,
+                                    hard_neg=train_args.hard_neg) 
+
+    if data_args.dataset == 'squad':
+        train_dataset = KorquadDataset(tokenizer=tokenizer,
+                                    datapath=train_path,
+                                    in_batch_neg=train_args.in_batch_neg,
+                                    num_neg=train_args.num_neg,
+                                    hard_neg=train_args.hard_neg) # KorquadDataset 추가
+
+    if data_args.dataset == 'both':
+        train_dataset = BothDataset(tokenizer=tokenizer,
+                                    datapath=train_path,
+                                    in_batch_neg=train_args.in_batch_neg,
+                                    num_neg=train_args.num_neg,
+                                    hard_neg=train_args.hard_neg) # BothDataset 추가
+
+
     valid_dataset = load_from_disk(dataset_path=valid_path)
 
     print("Train Dataset Length:", len(train_dataset))
@@ -59,8 +75,8 @@ def main(cfg):
         num_train_epochs=train_args.num_train_epochs,
         weight_decay=train_args.weight_decay,
         gradient_accumulation_steps=train_args.gradient_accumulation_steps,
-        warmup_steps = train_args.warmup_steps,
-    )
+        warmup_ratio=train_args.warmup_ratio
+        )
 
     # Dense Retrieval Trainer
     DR_trainer = DenseRetrievalTrainer(
@@ -74,7 +90,7 @@ def main(cfg):
     )
 
     DR_trainer.train()
-    DR_trainer.build_faiss(p_encoder_path='./retriever/saved_models/p_encoder', num_clusters=64)
+    DR_trainer.build_faiss(p_encoder_path='./retriever/saved_models/p_encoder', num_clusters=32)
 
 
 if __name__ == "__main__":

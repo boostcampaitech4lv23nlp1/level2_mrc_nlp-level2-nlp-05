@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+import torch
 from datetime import datetime
 from typing import NoReturn
 import argparse
@@ -25,6 +26,12 @@ from data_loaders.data_loader import load_train_dataset, load_eval_dataset
 from run_mrc import run_mrc
 from run_retrieval import run_retrieval
 from omegaconf import OmegaConf
+
+from reader.cnn import (
+    Conv1DRobertaForQuestionAnswering, 
+    Conv1DDebertaV2ForQuestionAnswering,
+    Conv1DElectraForQuestionAnswering,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -66,11 +73,25 @@ def main(model_args, data_args, training_args):
         else model_args.model_name_or_path,
         use_fast=True,
     )
+    
     model = AutoModelForQuestionAnswering.from_pretrained(
         model_args.model_name_or_path,
         from_tf=bool(".ckpt" in model_args.model_name_or_path),
         config=config,
     )
+    
+    '''
+    model = Conv1DRobertaForQuestionAnswering(
+        model_args.model_name_or_path,
+        config=config,
+    )
+    '''
+    
+    load_model_path = './models/05-06-56/pytorch_model.bin'
+    checkpoint = torch.load(load_model_path)
+    model.load_state_dict(checkpoint)
+    model.parameters 
+    
 
     # print training configuration
     print(f"model is from {model_args.model_name_or_path}")

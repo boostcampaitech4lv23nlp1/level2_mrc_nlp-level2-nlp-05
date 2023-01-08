@@ -3,14 +3,13 @@ model_args:
   dense_train_model_name: 'klue/bert-base' # DPR Encoder model name 추가
   p_encoder_path: './retriever/saved_models/p_encoder'
   q_encoder_path: './retriever/saved_models/q_encoder'
-  indexer_path: './retriever/dpr_model/faiss_clusters64_29-23-52.index'
   config_name: 
   tokenizer_name:
 
 data_args:
   dataset_name: './dataset/train_dataset'
-  train_dataset_name: './dataset/train_dataset/train'
-  valid_dataset_name: './dataset/train_dataset/validation'
+  train_dataset_name: '../dataset/train_dataset/train'
+  valid_dataset_name: '../dataset/train_dataset/validation'
   overwrite_cache: False
   preprocessing_num_workers:
   max_seq_length: 384
@@ -22,6 +21,7 @@ data_args:
   top_k_retrieval: 10
   retriever_type: 'faiss'  # base, faiss, elastic
   #use_faiss : False
+  dataset: 'basic'
 
 # DPR model training args
 # lr, batch_size, epochs, weight_decay, gradient
@@ -45,12 +45,9 @@ training_args:
   do_eval : False # 이거 근데 False라고 박아놧는데 자꾸 True로 들어감.. 왜일까
   do_predict : False
 
-  p_encoder_save_name : 'test'
-  q_encoder_save_name : 'test'
+  p_encoder_save_name : 'hard_neg'
+  q_encoder_save_name : 'hard_neg'
 
-  in_batch_neg : True
-  num_neg : 3 # 2^n - 1
-  hard_neg : False
-
-
-        
+  in_batch_neg : False
+  num_neg : 7 # 2^n - 1
+  hard_neg : True
