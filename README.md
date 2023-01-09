@@ -24,10 +24,8 @@
 
 data에 대한 argument 는 `arguments.py` 의 `DataTrainingArguments` 에서 확인 가능합니다. 
 
-## 파일 구성
+## 저장소 구성
 
-
-### 저장소 구조
 
 ```
 to-do
@@ -57,4 +55,9 @@ python train.py --config base_config
 ### How to submit
 
 `--output_dir` 위치에 `predictions.json` 이라는 파일이 생성됩니다. 해당 파일을 제출해주시면 됩니다.
+
+## Competition Score
+|Rank|EM|F1_score|
+|------------------|-----------------------|-------|
+|***5***|65.56|77.25|
 
