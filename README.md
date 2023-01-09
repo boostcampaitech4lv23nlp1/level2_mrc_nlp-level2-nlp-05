@@ -1,7 +1,7 @@
 ## Task 소개
 
 - **Open-Domain Question Answering(ODQA)** 는 주어지는 지문이 따로 존재하지 않고 사전에 구축 되어 있는 knowledge resource 에서 질문에 대답할 수 있는 문서를 찾아 다양한 종류의 질문에 대답하는 인공지능을 만드는 Task 입니다.
-![This is an image](https://url)
+![This is an image](./assets/odqa_picture.png)
 
 - 평가 방법
     - **Exact Match(EM)** : 모델의 예측과 실제 답이 정확하게 일치할 때만 점수가 주어짐
