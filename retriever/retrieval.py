@@ -25,6 +25,10 @@ def timer(name):
 
 if __name__ == "__main__":
 
+    """
+    각각의 Retriver의 성능을 비교하기 위한 코드입니다.
+    """
+
     import argparse
 
     parser = argparse.ArgumentParser(description="")
@@ -88,27 +92,21 @@ if __name__ == "__main__":
 
     elif args.retriever_type == "elastic":
         print("init elastic...")
-        retriever = ElasticRetrieval(index_name="squad")
-        retriever.check_index()
-        retriever.create_index()
-        
-        # dataset = load_dataset('sangmun2/ai_hub_qa_without_dup')
-
-        breakpoint()
+        retriever = ElasticRetrieval(
+            tokenize_fn=tokenizer.tokenize, index_name="origin-wiki-multi"
+        )
 
         with timer("single query by elastic search"):
-            scores, docs = retriever.retrieve_HN(query, topk=2)
+            scores, indices = retriever.retrieve(query)
 
-        # with timer("bulk query by elastic search"):
-        #     df = retriever.retrieve(full_ds)
-        #     df["correct"] = df["original_context"] == df["context"]
-        #     print(
-        #         "correct retrieval result by elastic search",
-        #         df["correct"].sum() / len(df),
-        #     )
-
-        #     df.to_csv("elastic.csv")
-        #     # 0.57490458015267186 점
+        with timer("bulk query by elastic search"):
+            df = retriever.retrieve(full_ds)
+            df["correct"] = df["original_context"] == df["context"]
+            print(
+                "correct retrieval result by elastic search",
+                df["correct"].sum() / len(df),
+            )
+            df.to_csv("elastic.csv")
 
     else:
         retriever = SparseRetrieval(
@@ -127,4 +125,4 @@ if __name__ == "__main__":
             print(
                 "correct retrieval result by exhaustive search",
                 df["correct"].sum() / len(df),
-            )  # 0.25190839694656486 점
+            )

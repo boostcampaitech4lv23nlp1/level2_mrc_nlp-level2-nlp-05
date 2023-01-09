@@ -31,6 +31,7 @@ from transformers import (
 from utils.utils_qa import check_no_error, postprocess_qa_predictions
 import pandas as pd
 
+
 def run_retrieval(
     tokenize_fn: Callable[[str], List[str]],
     datasets: DatasetDict,
@@ -52,7 +53,7 @@ def run_retrieval(
         df = retriever.retrieve_faiss(
             datasets["validation"], topk=data_args.top_k_retrieval
         )
-    
+
     elif data_args.retriever_type == "elastic":
         print(data_args.retriever_type)
 
@@ -60,21 +61,22 @@ def run_retrieval(
             data_path=data_args.data_path,
             context_path=data_args.context_path,
             setting_path=data_args.setting_path,
-            index_name=data_args.index_name
-            )
+            index_name=data_args.index_name,
+        )
 
         df = retriever.retrieve(datasets["validation"], topk=data_args.top_k_retrieval)
 
-    elif data_args.retriever_type == "base" :
+    elif data_args.retriever_type == "base":
         print(data_args.retriever_type)
         retriever = SparseRetrieval(
             tokenize_fn=tokenize_fn, data_path=data_path, context_path=context_path
         )
         retriever.get_sparse_embedding()
         df = retriever.retrieve(datasets["validation"], topk=data_args.top_k_retrieval)
+
     elif data_args.retriever_type == "ensemble":
-        df = pd.read_csv(data_args.csv_ensemble_path)  
-        
+        df = pd.read_csv(data_args.csv_ensemble_path)
+
     # test data 에 대해선 정답이 없으므로 id question context 로만 데이터셋이 구성됩니다.
     f = Features(
         {
