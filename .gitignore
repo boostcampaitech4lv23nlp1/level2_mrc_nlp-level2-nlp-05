@@ -8,3 +8,4 @@ outputs/*
 config/*
 retriever/dpr_model/*
 retriever/saved_models/*
+*.csv
