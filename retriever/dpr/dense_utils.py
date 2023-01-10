@@ -1,9 +1,13 @@
+import os
+import sys
 from typing import Callable, Dict, List, NoReturn, Optional, Tuple
 
 from datasets import load_from_disk, load_dataset
 from torch.utils.data import Dataset, TensorDataset
 import numpy as np
 from tqdm import tqdm
+
+sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from elastic_retrieval import ElasticRetrieval
 
 
