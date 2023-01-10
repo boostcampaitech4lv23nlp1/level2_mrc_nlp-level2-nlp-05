@@ -77,8 +77,8 @@ bash ./install/install_requirements.sh
 ./data/                  # 전체 데이터. 아래 상세 설명
 retrieval.py             # sparse retreiver 모듈 제공 
 arguments.py             # 실행되는 모든 argument가 dataclass 의 형태로 저장되어있음
-trainer_qa.py            # MRC 모델 학습에 필요한 trainer 제공.
-utils_qa.py              # 기타 유틸 함수 제공 
+trainer_qa.py            # MRC 모델 학습에 필요한 trainer 제공
+utils_qa.py              # 기타 유틸 함수 제공 및 조사 후처리
 
 train.py                 # MRC, Retrieval 모델 학습 및 평가 
 inference.py		     # ODQA 모델 평가 또는 제출 파일 (predictions.json) 생성
@@ -103,7 +103,7 @@ data에 대한 argument 는 `arguments.py` 의 `DataTrainingArguments` 에서 �
 
 # 훈련, 평가, 추론
 
-### train
+### Train
 
 만약 arguments 에 대한 세팅을 직접하고 싶다면 `arguments.py` 를 참고해주세요. 
 
@@ -135,7 +135,7 @@ def prepare_train_features(examples):
 python train.py --output_dir ./models --do_train
 ```
 
-### eval
+### Eval
 
 MRC 모델의 평가는(`--do_eval`) 따로 설정해야 합니다.  위 학습 예시에 단순히 `--do_eval` 을 추가로 입력해서 훈련 및 평가를 동시에 진행할 수도 있습니다.
 
@@ -144,7 +144,7 @@ MRC 모델의 평가는(`--do_eval`) 따로 설정해야 합니다.  위 학습 
 python train.py --output_dir ./models/{model_dir} --model_name_or_path ./models/{model_dir} --do_eval 
 ```
 
-### inference
+### Inference
 
 retrieval 과 mrc 모델의 학습이 완료되면 `inference.py` 를 이용해 odqa 를 진행할 수 있습니다.
 
@@ -158,9 +158,19 @@ retrieval 과 mrc 모델의 학습이 완료되면 `inference.py` 를 이용해 
 python inference.py --output_dir ./outputs/test_dataset/ --dataset_name ../data/test_dataset/ --model_name_or_path ./models/train_dataset/ --do_predict
 ```
 
+### Post processing
+
+모델이 출력한 예측값에 konlpy 라이브러리를 적용하여 형태소 분석을 합니다.
+
+* Mecab, Hannanum, Okt 형태소 분석기를 사용해 예측값의 형태소를 출력합니다.
+
+* 3가지 분석기 중에 Okt를 포함한 2가지 이상 분석기에서 예측값이 조사로 끝나는 것으로 나타난 경우엔 해당 조사를 제거합니다.
+
+* 조사가 제거된 예측 결과는 `--output_dir` 위치에 `predictions_post.json` 파일로 저장됩니다.
+
 ### How to submit
 
-`inference.py` 파일을 위 예시처럼 `--do_predict` 으로 실행하면 `--output_dir` 위치에 `predictions.json` 이라는 파일이 생성됩니다. 해당 파일을 제출해주시면 됩니다.
+`inference.py` 파일을 위 예시처럼 `--do_predict` 으로 실행하면 `--output_dir` 위치에 `predictions.json` 와 `predictions_post.json` 라는 파일이 생성됩니다. 해당 파일을 제출해주시면 됩니다.
 
 ## Things to know
 
