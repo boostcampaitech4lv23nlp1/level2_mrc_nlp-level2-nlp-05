@@ -44,9 +44,7 @@ def main(model_args, data_args, training_args):
     # Set output_dir name with current time
     now = datetime.now()
     train_start_time = now.strftime("%d-%H-%M")
-    training_args.output_dir = os.path.join(
-        training_args.output_dir, f"{train_start_time}"
-    )
+    training_args.output_dir = os.path.join(training_args.output_dir, f"{train_start_time}")
 
     # Set Loggin & verbosity
     logging.basicConfig(
@@ -64,14 +62,10 @@ def main(model_args, data_args, training_args):
 
     # AutoConfig, Autotokenizer, AutoModel
     config = AutoConfig.from_pretrained(
-        model_args.config_name
-        if model_args.config_name is not None
-        else model_args.model_name_or_path,
+        model_args.config_name if model_args.config_name is not None else model_args.model_name_or_path,
     )
     tokenizer = AutoTokenizer.from_pretrained(
-        model_args.tokenizer_name
-        if model_args.tokenizer_name is not None
-        else model_args.model_name_or_path,
+        model_args.tokenizer_name if model_args.tokenizer_name is not None else model_args.model_name_or_path,
         use_fast=True,
     )
 

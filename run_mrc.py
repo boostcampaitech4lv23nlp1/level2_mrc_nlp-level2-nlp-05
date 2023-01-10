@@ -33,41 +33,15 @@ from utils.utils_qa import check_no_error, postprocess_qa_predictions
 from data_loaders.data_loader import (
     load_train_dataset,
     load_eval_dataset,
-    load_eval_train_dataset,
 )
 from run_sparse_retrieval import run_sparse_retrieval
+from run_retrieval import run_retrieval
 
 import wandb
 
 from konlpy.tag import Hannanum, Mecab, Okt
 
 logger = logging.getLogger(__name__)
-
-# Post-processing:
-def post_processing_function(
-    examples,
-    features,
-    predictions: Tuple[np.ndarray, np.ndarray],
-    training_args: TrainingArguments,
-) -> EvalPrediction:
-
-    # Post-processing: start logits과 end logits을 original context의 정답과 match시킵니다.
-    predictions = postprocess_qa_predictions(
-        examples=examples,
-        features=features,
-        predictions=predictions,
-        max_answer_length=data_args.max_answer_length,
-        output_dir=training_args.output_dir,
-    )
-
-    # Metric을 구할 수 있도록 Format을 맞춰줍니다.
-    formatted_predictions = [{"id": k, "prediction_text": v} for k, v in predictions.items()]
-    if training_args.do_predict:
-        return formatted_predictions
-
-    answer_column_name = "answers" if "answers" in datasets["validation"].column_names else datasets["validation"].column_names[2]
-    references = [{"id": ex["id"], "answers": ex[answer_column_name]} for ex in datasets["validation"]]
-    return EvalPrediction(predictions=formatted_predictions, label_ids=references)
 
 
 def run_mrc(
@@ -88,6 +62,31 @@ def run_mrc(
     # flag가 True이면 이미 max length로 padding된 상태입니다.
     # 그렇지 않다면 data collator에서 padding을 진행해야합니다.
     data_collator = DataCollatorWithPadding(tokenizer, pad_to_multiple_of=8 if training_args.fp16 else None)
+
+    def post_processing_function(
+        examples,
+        features,
+        predictions: Tuple[np.ndarray, np.ndarray],
+        training_args: TrainingArguments,
+    ) -> EvalPrediction:
+
+        # Post-processing: start logits과 end logits을 original context의 정답과 match시킵니다.
+        predictions = postprocess_qa_predictions(
+            examples=examples,
+            features=features,
+            predictions=predictions,
+            max_answer_length=data_args.max_answer_length,
+            output_dir=training_args.output_dir,
+        )
+
+        # Metric을 구할 수 있도록 Format을 맞춰줍니다.
+        formatted_predictions = [{"id": k, "prediction_text": v} for k, v in predictions.items()]
+        if training_args.do_predict:
+            return formatted_predictions
+
+        answer_column_name = "answers" if "answers" in datasets["validation"].column_names else datasets["validation"].column_names[2]
+        references = [{"id": ex["id"], "answers": ex[answer_column_name]} for ex in datasets["validation"]]
+        return EvalPrediction(predictions=formatted_predictions, label_ids=references)
 
     metric = load_metric("squad")
 
@@ -160,7 +159,7 @@ def run_mrc(
                 os.makedirs(predict_dir)
 
             # retrieval tokenizer
-            retrieval_tokenizer = AutoTokenizer(model_args.retrieval_model_name)
+            retrieval_tokenizer = AutoTokenizer.from_pretrained(model_args.retrieval_model_name)
             training_args.output_dir = predict_dir
             predict_datasets = run_retrieval(
                 retrieval_tokenizer,
