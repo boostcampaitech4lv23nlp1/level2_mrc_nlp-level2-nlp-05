@@ -26,13 +26,9 @@ data에 대한 argument 는 `arguments.py` 의 `DataTrainingArguments` 에서 �
 
 ## Pre-train
 Salient Span Masking(SSM) 은 REALM에서 제시된 pretraining방법으로 인물, 날짜, 장소, 수량과 같을 Named Entity를 Masking하여 모델이 QA task에 적합한 world knowledge를 더 잘 학습할 수 있도록 한다.
-
-  details : [링크](./ssm/README.md)
-
-
+details : [링크](./ssm/README.md)
 
 ## Reader
-
 
 ### CNN Layer
  CNN은 토큰의 지역적인 특징을 반영할 수 있다. 이를 이용하여, 모델이 좀더 제대로 위치를 예측할 수 있도록 CNN 을 모델 끝에 추가함.
@@ -78,7 +74,6 @@ Mecab, Hannanum, Okt 형태소 분석기를 사용해 예측값의 형태소를 
 3가지 분석기 중에 Okt를 포함한 2가지 이상 분석기에서 예측값이 조사로 끝나는 것으로 나타난 경우엔 해당 조사를 제거합니다.
 
 조사가 제거된 예측 결과는 --output_dir 위치에 predictions_post.json 파일로 저장됩니다.
-
 
 ## How to run
 
