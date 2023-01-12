@@ -95,10 +95,8 @@ class ElasticRetrieval:
         )
         self.index_name = index_name
 
-        not_wiki_dataset = ["basic_dataset", "squad", "ai_hub"]
-
         # wiki_document.json 전용 elastic search document 삽입 코드
-        if index_name not in not_wiki_dataset:
+        if index_name:
             if self.es.indices.exists(index=index_name) and (
                 self.es.count(index=index_name)["count"] > 1000
             ):
@@ -133,94 +131,6 @@ class ElasticRetrieval:
                 n_records = self.es.count(index=index_name)["count"]
                 print(f"Successfully loaded {n_records} into {index_name}")
                 print("@@@@@@@@@ 데이터 삽입 완료 @@@@@@@@@")
-
-    def check_index(self):
-
-        index_name = self.index_name
-        if self.es.indices.exists(index=index_name):
-            print(f" @#@#@# {index_name} is aleray exist in elastic search @#@#@# ")
-            return True
-        else:
-            print(f"{index_name} is not aleray exist in elastic search")
-            print(f" Creating '{index_name}' in elastic search ")
-            self.create_index()
-
-    def create_index(self):
-
-        index_name = self.index_name
-
-        assert index_name in [
-            "basic_dataset",
-            "squad",
-            "ai_hub",
-        ], "hard_negative용 index는 \['basic_dataset','squad','aihub'] 중에 하나여야 합니다."
-
-        try:
-            self.es.indices.delete(index=index_name)
-        except:
-            pass
-
-        setting_path = "setting.json"
-        with open(setting_path, "r") as f:
-            setting = json.load(f)
-
-        self.es.indices.create(index=index_name, body=setting)
-        self.index_name = index_name
-        print("Index creation has been completed")
-
-        if index_name == "basic_dataset":
-
-            dataset = load_from_disk("../dataset/train_dataset")
-            dataset = concatenate_datasets(
-                [
-                    dataset["train"].flatten_indices(),
-                    dataset["validation"].flatten_indices(),
-                ]
-            )
-
-            dataset_corpus = list(dict.fromkeys([each for each in dataset["context"]]))
-
-        elif index_name == "squad":
-
-            dataset = load_dataset("sangmun2/squad_train")
-            dataset_corpus = list(
-                dict.fromkeys([each for each in dataset["train"]["context"]])
-            )
-
-        elif index_name == "ai_hub":
-
-            dataset = load_dataset("sangmun2/ai_hub_qa_without_dup")
-            dataset_corpus = list(
-                dict.fromkeys([each for each in dataset["train"]["context"]])
-            )
-
-        dataset_corpus = [
-            {"document_text": dataset_corpus[i]} for i in range(len(dataset_corpus))
-        ]
-
-        print(f" ### {index_name} 에 데이터를 삽입합니다. ###")
-        print(f" 총 데이터 개수 : {len(dataset_corpus)}")
-
-        for i, text in enumerate(tqdm(dataset_corpus)):
-            try:
-                self.es.index(index=index_name, id=i, body=text)
-            except:
-                print(f"Unable to load document {i}.")
-
-        n_records = self.es.count(index=index_name)["count"]
-        print(f"Successfully loaded {n_records} into {index_name}")
-        print("@@@@@@@@@ 데이터 삽입 완료 @@@@@@@@@")
-
-    def retrieve_HN(
-        self, query_or_dataset: Union[str, Dataset], topk: Optional[int] = 1
-    ) -> Union[Tuple[List, List], pd.DataFrame]:
-
-        if isinstance(query_or_dataset, str):
-            doc_scores, doc_indices, docs = self.get_relevant_doc(
-                query_or_dataset, k=topk
-            )
-
-            return (doc_scores, [each["_source"]["document_text"] for each in docs])
 
     def retrieve(
         self, query_or_dataset: Union[str, Dataset], topk: Optional[int] = 1

@@ -8,7 +8,7 @@ import numpy as np
 from tqdm import tqdm
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-from elastic_retrieval import ElasticRetrieval
+from hard_negative import HardNegativeRetrieval
 
 
 class BaseDataset(Dataset):
@@ -47,7 +47,7 @@ class BaseDataset(Dataset):
         if hard_neg:
 
             print(" ### making in_batch_neg + Hard negative(elastic) ### ")
-            retriever = ElasticRetrieval(index_name="basic_dataset")
+            retriever = HardNegativeRetrieval(index_name="basic_dataset")
             retriever.check_index()
 
             print
@@ -163,7 +163,7 @@ class KorquadDataset(Dataset):
         if hard_neg:
 
             print(" ### making in_batch_neg + Hard negative(elastic) ### ")
-            retriever = ElasticRetrieval(index_name="squad")
+            retriever = HardNegativeRetrieval(index_name="squad")
             retriever.check_index()
 
             corpus = np.array(
@@ -286,7 +286,7 @@ class BothDataset(Dataset):
         if hard_neg:
 
             print(" ### making in_batch_neg + Hard negative(elastic) ### ")
-            retriever = ElasticRetrieval(index_name="squad")
+            retriever = HardNegativeRetrieval(index_name="squad")
             retriever.check_index()
 
             # corpus = np.array(list(set([example for example in load_datasets['context']])))

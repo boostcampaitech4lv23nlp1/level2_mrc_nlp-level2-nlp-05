@@ -10,7 +10,7 @@ import torch
 import torch.nn.functional as F
 from datasets import load_from_disk
 from dense_model import BertEncoder
-from dense_utils import BaseDataset, BothDataset, KorquadDataset
+from dense_dataloader import BaseDataset, BothDataset, KorquadDataset
 from torch.utils.data import DataLoader, RandomSampler, TensorDataset
 from tqdm import tqdm
 from transformers import (AdamW, AutoTokenizer, TrainingArguments,
@@ -38,10 +38,7 @@ class DenseRetrievalTrainer:
         self.train_dataset = train_dataset
         self.valid_dataset = valid_dataset
 
-        data_path = "./dataset/"
-        context_path = "wikipedia_documents.json"
-
-        with open(os.path.join(data_path, context_path), "r", encoding="utf-8") as f:
+        with open(cfg.data_args.wiki_data_path, "r", encoding="utf-8") as f:
             self.wiki = json.load(f)
 
         self.wiki_corpus = list(
@@ -570,6 +567,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, default="dense_config")
     args, _ = parser.parse_known_args()
-    cfg = OmegaConf.load(f"./retriever/dpr/config/{args.config}.yaml")
+    cfg = OmegaConf.load(f"./config/{args.config}.yaml")
 
     main(cfg)

@@ -92,9 +92,7 @@ if __name__ == "__main__":
 
     elif args.retriever_type == "elastic":
         print("init elastic...")
-        retriever = ElasticRetrieval(
-            tokenize_fn=tokenizer.tokenize, index_name="origin-wiki-multi"
-        )
+        retriever = ElasticRetrieval(index_name="origin-wiki-multi")
 
         with timer("single query by elastic search"):
             scores, indices = retriever.retrieve(query)
