@@ -47,8 +47,8 @@ class BaseDataset(Dataset):
         if hard_neg:
 
             print(" ### making in_batch_neg + Hard negative(elastic) ### ")
-            retriever = HardNegativeRetrieval(index_name="basic_dataset")
-            retriever.check_index()
+            retrieval = HardNegativeRetrieval(index_name="basic_dataset")
+            retrieval.check_index()
 
             print
             corpus = np.array(
@@ -64,7 +64,7 @@ class BaseDataset(Dataset):
 
                 while True:
                     neg_idx = np.random.randint(len(corpus), size=num_neg)
-                    scores, docs = retriever.retrieve_HN(query, topk=2)
+                    scores, docs = retrieval.retrieve_HN(query, topk=2)
 
                     if not context in corpus[neg_idx]:
                         tmp_doc = docs[1] if context == docs[0] else docs[0]
@@ -163,8 +163,8 @@ class KorquadDataset(Dataset):
         if hard_neg:
 
             print(" ### making in_batch_neg + Hard negative(elastic) ### ")
-            retriever = HardNegativeRetrieval(index_name="squad")
-            retriever.check_index()
+            retrieval = HardNegativeRetrieval(index_name="squad")
+            retrieval.check_index()
 
             corpus = np.array(
                 list(set([example for example in load_datasets["context"]]))
@@ -179,7 +179,7 @@ class KorquadDataset(Dataset):
 
                 while True:
                     neg_idx = np.random.randint(len(corpus), size=num_neg)
-                    scores, docs = retriever.retrieve_HN(query, topk=2)
+                    scores, docs = retrieval.retrieve_HN(query, topk=2)
 
                     if not context in corpus[neg_idx]:
                         tmp_doc = docs[1] if context == docs[0] else docs[0]
@@ -286,8 +286,8 @@ class BothDataset(Dataset):
         if hard_neg:
 
             print(" ### making in_batch_neg + Hard negative(elastic) ### ")
-            retriever = HardNegativeRetrieval(index_name="squad")
-            retriever.check_index()
+            retrieval = HardNegativeRetrieval(index_name="squad")
+            retrieval.check_index()
 
             # corpus = np.array(list(set([example for example in load_datasets['context']])))
             corpus = np.array(list(set([example for example in contexts])))
@@ -302,7 +302,7 @@ class BothDataset(Dataset):
 
                 while True:
                     neg_idx = np.random.randint(len(corpus), size=num_neg)
-                    scores, docs = retriever.retrieve_HN(query, topk=2)
+                    scores, docs = retrieval.retrieve_HN(query, topk=2)
 
                     if not context in corpus[neg_idx]:
                         tmp_doc = docs[1] if context == docs[0] else docs[0]

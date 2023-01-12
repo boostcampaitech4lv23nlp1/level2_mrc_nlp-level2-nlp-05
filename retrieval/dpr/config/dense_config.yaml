@@ -12,7 +12,7 @@ data_args:
   valid_dataset_name: '../../dataset/train_dataset/validation'
   dataset: 'basic' # basic , korquad, both
   wiki_data_path: '../../dataset/wikipedia_documents.json'
-  setting_path: '../retriever/setting.json'
+  setting_path: '../retrieval/setting.json'
 
 # DPR model training args # lr, batch_size, epochs, weight_decay, gradient
 training_args:
