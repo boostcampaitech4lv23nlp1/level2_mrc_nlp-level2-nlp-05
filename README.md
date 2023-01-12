@@ -39,9 +39,9 @@ Curriculum Learning에서는 데이터의 난이도에 따라 데이터 종류�
 * klue/roberta-large로 1차 inference를 진행하여 train dataset에 대한 예측값을 계산
 * start_index와 end_index 예측값에 대해 각각 L2 Loss를 계산 하여 산출된 Loss를 기준으로 각각의 훈련 데이터에 대해 난이도를 선정
 
-## Retriver
+## Retrieval
 
-### Sparse Retriever
+### Sparse Retrieval
 Sparse Retriever는 Elastic Search를 사용
 
 * 설치방법
@@ -56,7 +56,7 @@ decompound_mode : mixed
 similarity : BM25
 ```
 
-### Dense Retriever
+### Dense Retrieval
 Encoder 모델로 encoding한 query, passage의 representation을 dot_product하여 나온 값으로 query와 passage의 유사도를 학습시킴
 * in-batch-negative, in-batch-negative + hard-negative 방법을 이용
 ![데이터 분포](./assets/hard_negative.png)
