@@ -30,10 +30,15 @@ data에 대한 argument 는 `arguments.py` 의 `DataTrainingArguments` 에서 �
 ```
 to-do
 ```
+## Pre-train
+Salient Span Masking(SSM) 은 REALM에서 제시된 pretraining방법으로 인물, 날짜, 장소, 수량과 같을 Named Entity를 Masking하여 모델이 QA task에 적합한 world knowledge를 더 잘 학습할 수 있도록 한다.
+
+  details : [링크](./ssm/README.md)
+
+
 
 ## Reader
 
-### Salient Span Masking
 
 ### CNN Layer
 
