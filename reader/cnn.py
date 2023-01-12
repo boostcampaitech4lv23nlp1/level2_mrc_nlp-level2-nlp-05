@@ -52,7 +52,7 @@ class Conv1DRobertaForQuestionAnswering(RobertaPreTrainedModel):
     _keys_to_ignore_on_load_unexpected = [r"pooler"]
     _keys_to_ignore_on_load_missing = [r"position_ids"]
 
-    def __init__(self, pretrained_model_name_or_path, config):
+    def __init__(self, pretrained_model_name_or_path, config, model_args):
         super().__init__(config)
         self.num_labels = config.num_labels
 
@@ -61,9 +61,10 @@ class Conv1DRobertaForQuestionAnswering(RobertaPreTrainedModel):
         self.roberta = AutoModel.from_pretrained(
             pretrained_model_name_or_path, config=config, add_pooling_layer=False
         )
-
+        # 모델 학습 freeze
         for para in self.roberta.parameters():
             para.requires_grad = False
+        # 모델 학습 불러오기 -> transformer에서 가져오기 때문에 필요 없음
 
         self.hidden_dim = config.hidden_size
 
@@ -210,13 +211,30 @@ class Conv1DRobertaForQuestionAnswering(RobertaPreTrainedModel):
 class Conv1DDebertaV2ForQuestionAnswering(DebertaV2PreTrainedModel):
     _keys_to_ignore_on_load_unexpected = [r"pooler"]
 
-    def __init__(self, pretrained_model_name_or_path, config):
+    def __init__(self, pretrained_model_name_or_path, config, model_args):
         super().__init__(config)
         self.num_labels = config.num_labels
 
         self.deberta = AutoModel.from_pretrained(
             pretrained_model_name_or_path, config=config
         )
+
+        #이전 학습 freeze
+        for para in self.deberta.parameters():
+            para.requires_grad = False
+        # 모델 학습 불러오기
+        pretrained_dict = torch.load(model_args.cnn_pretrain_model_path)
+        model_dict = self.deberta.state_dict()
+        # 1. filter out unnecessary keys~``
+        new_pretrained_dict = {}
+        for k, v in pretrained_dict.items():
+            k = re.sub("deberta\.","",k)
+            if k in model_dict:
+                new_pretrained_dict[k] = v
+        # 2. overwrite entries in the existing state dict
+        model_dict.update(new_pretrained_dict) 
+        # 3. load the new state dict
+        self.deberta.load_state_dict(model_dict)
 
         self.qa_outputs = nn.Linear(config.hidden_size, config.num_labels)
 
@@ -371,14 +389,18 @@ class Conv1DElectraForQuestionAnswering(ElectraPreTrainedModel):
     config_class = ElectraConfig
     base_model_prefix = "electra"
 
-    def __init__(self, pretrained_model_name_or_path, config):
+    def __init__(self, pretrained_model_name_or_path, config, model_args):
         super().__init__(config)
         self.num_labels = config.num_labels
 
         self.electra = AutoModel.from_pretrained(
             pretrained_model_name_or_path, config=config
         )
-        pretrained_dict = torch.load('./models/04-01-12_electra_2epoch/pytorch_model.bin')
+        #이전 학습 freeze
+        for para in self.electra.parameters():
+            para.requires_grad = False
+        # 모델 학습 불러오기
+        pretrained_dict = torch.load(model_args.cnn_pretrain_model_path)
         model_dict = self.electra.state_dict()
         # 1. filter out unnecessary keys~``
         new_pretrained_dict = {}
@@ -390,8 +412,6 @@ class Conv1DElectraForQuestionAnswering(ElectraPreTrainedModel):
         model_dict.update(new_pretrained_dict) 
         # 3. load the new state dict
         self.electra.load_state_dict(model_dict)
-        for para in self.electra.parameters():
-            para.requires_grad = False
 
         self.qa_outputs = nn.Linear(config.hidden_size, config.num_labels)
 
