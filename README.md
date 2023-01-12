@@ -50,7 +50,6 @@ to-do
 ### train
 ```
 python train.py --config base_config
-
 ```
 ### How to submit
 
