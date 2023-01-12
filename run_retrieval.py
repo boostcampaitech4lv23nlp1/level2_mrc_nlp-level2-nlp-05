@@ -16,7 +16,8 @@ from datasets import (
 from retriever.sparse_retrieval import SparseRetrieval
 from retriever.faiss_retrieval import FaissRetrieval
 from retriever.elastic_retrieval import ElasticRetrieval
-from retriever.dense_retrieval import DenseRetrieval
+
+# from retriever.dense_retrieval import DenseRetrieval
 from trainer.trainer_qa import QuestionAnsweringTrainer
 from transformers import (
     AutoConfig,
@@ -45,14 +46,10 @@ def run_retrieval(
 
     if data_args.retriever_type == "faiss":
         print(data_args.retriever_type)
-        retriever = FaissRetrieval(
-            tokenize_fn=tokenize_fn, data_path=data_path, context_path=context_path
-        )
+        retriever = FaissRetrieval(tokenize_fn=tokenize_fn, data_path=data_path, context_path=context_path)
         retriever.get_sparse_embedding()
         retriever.build_faiss(num_clusters=data_args.num_clusters)
-        df = retriever.retrieve_faiss(
-            datasets["validation"], topk=data_args.top_k_retrieval
-        )
+        df = retriever.retrieve_faiss(datasets["validation"], topk=data_args.top_k_retrieval)
 
     elif data_args.retriever_type == "elastic":
         print(data_args.retriever_type)
@@ -68,9 +65,7 @@ def run_retrieval(
 
     elif data_args.retriever_type == "base":
         print(data_args.retriever_type)
-        retriever = SparseRetrieval(
-            tokenize_fn=tokenize_fn, data_path=data_path, context_path=context_path
-        )
+        retriever = SparseRetrieval(tokenize_fn=tokenize_fn, data_path=data_path, context_path=context_path)
         retriever.get_sparse_embedding()
         df = retriever.retrieve(datasets["validation"], topk=data_args.top_k_retrieval)
 

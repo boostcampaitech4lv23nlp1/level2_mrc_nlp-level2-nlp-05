@@ -1,8 +1,9 @@
 model_args:
-  model_name_or_path : 'klue/roberta-large'
-  retrieval_model_name: 'klue/roberta-large' # Sparse : 'klue/roberta-large' | DPR : 'klue/bert-base'
+  model_name_or_path : 'klue/roberta-small'
+  retrieval_model_name: 'klue/roberta-small' # Sparse : 'klue/roberta-large' | DPR : 'klue/bert-base'
   indexer_path:
-  tokenizer_name: 'klue/roberta-large'
+  config_name: 
+  tokenizer_name: 'klue/roberta-small'
 
 data_args:
   dataset_name: './dataset/train_dataset'
@@ -16,27 +17,27 @@ data_args:
   num_clusters: 64
   top_k_retrieval: 30
   retriever_type: 'elastic'  # base, faiss, elastic, ensemble
-  use_faiss : False
+  use_faiss: False
   csv_ensemble_path: './csv/ensemble_concat.csv'
 
   # Params for ElasticSearch
   data_path: './dataset'
   context_path: 'wikipedia_documents.json'
   setting_path: "./retriever/setting.json"
-  index_name : 'origin-wiki-multi'
+  index_name: 'origin-wiki-multi'
 
 training_args:
   output_dir: './models/'
   logging_dir: './logs'
-  per_device_train_batch_size : 16
-  per_device_eval_batch_size : 16
-  save_total_limit : 2
-  load_best_model_at_end : False
-  num_train_epochs : 2
-  logging_steps : 20
+  per_device_train_batch_size: 16
+  per_device_eval_batch_size: 16
+  save_total_limit: 1
+  load_best_model_at_end: False
+  num_train_epochs: 1
+  logging_steps: 20
   eval_steps: 200
-  evaluation_strategy : 'steps'
-  overwrite_output_dir : True
-  do_train : False
-  do_eval : False # evaluation strategy가 있을시 자동으로 True로 설정됨
-  do_predict : True
+  evaluation_strategy: 'steps'
+  overwrite_output_dir: True
+  do_train: True
+  do_eval: False # evaluation strategy가 있을시 자동으로 True로 설정됨
+  do_predict: False
