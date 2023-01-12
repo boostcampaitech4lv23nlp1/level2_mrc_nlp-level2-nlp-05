@@ -24,12 +24,6 @@
 
 data에 대한 argument 는 `arguments.py` 의 `DataTrainingArguments` 에서 확인 가능합니다. 
 
-## 저장소 구성
-
-
-```
-to-do
-```
 ## Pre-train
 Salient Span Masking(SSM) 은 REALM에서 제시된 pretraining방법으로 인물, 날짜, 장소, 수량과 같을 Named Entity를 Masking하여 모델이 QA task에 적합한 world knowledge를 더 잘 학습할 수 있도록 한다.
 
@@ -41,24 +35,59 @@ Salient Span Masking(SSM) 은 REALM에서 제시된 pretraining방법으로 인�
 
 
 ### CNN Layer
-
+ CNN은 토큰의 지역적인 특징을 반영할 수 있다. 이를 이용하여, 모델이 좀더 제대로 위치를 예측할 수 있도록 CNN 을 모델 끝에 추가함.
+  ![This is an image](./assets/1dconvnet.png)
+ 
 ### Curriculum Learning
+Curriculum Learning에서는 데이터의 난이도에 따라 데이터 종류를 상/중/하로 나누고  난이도 하, 난이도 중, 난이도 상 순서로 데이터를 학습함.
+* klue/roberta-large로 1차 inference를 진행하여 train dataset에 대한 예측값을 계산
+* start_index와 end_index 예측값에 대해 각각 L2 Loss를 계산 하여 산출된 Loss를 기준으로 각각의 훈련 데이터에 대해 난이도를 선정
 
 ## Retriver
 
 ### Sparse Retriever
+Sparse Retriever는 Elastic Search를 사용
+
+* 설치방법
+```
+bash ./elastic_search_install.sh
+```
+* Basic setting (상세사항은 ./retriever/setting.json 참조)
+```
+filter : shingle
+tokenizer : nori_tokenizer
+decompound_mode : mixed
+similarity : BM25
+```
 
 ### Dense Retriever
+Encoder 모델로 encoding한 query, passage의 representation을 dot_product하여 나온 값으로 query와 passage의 유사도를 학습시킴
+* in-batch-negative, in-batch-negative + hard-negative 방법을 이용
+![데이터 분포](./assets/hard_negative.png)
 
-## 훈련, 평가, 추론
+## Post processing
+
+```
+bash ./konlpy_install.sh
+```
+
+모델이 출력한 예측값에 konlpy 라이브러리를 적용하여 형태소 분석을 합니다.
+
+Mecab, Hannanum, Okt 형태소 분석기를 사용해 예측값의 형태소를 출력합니다.
+
+3가지 분석기 중에 Okt를 포함한 2가지 이상 분석기에서 예측값이 조사로 끝나는 것으로 나타난 경우엔 해당 조사를 제거합니다.
+
+조사가 제거된 예측 결과는 --output_dir 위치에 predictions_post.json 파일로 저장됩니다.
+
+
+## How to run
 
 ### train
 ```
 python train.py --config base_config
 ```
 ### How to submit
-
-`--output_dir` 위치에 `predictions.json` 이라는 파일이 생성됩니다. 해당 파일을 제출해주시면 됩니다.
+inference.py 파일을 위 예시처럼 --do_predict 으로 실행하면 --output_dir 위치에 predictions.json 와 predictions_post.json 라는 파일이 생성됩니다. 해당 파일을 제출해주시면 됩니다.
 
 ## Competition Score
 |Rank|EM|F1_score|
