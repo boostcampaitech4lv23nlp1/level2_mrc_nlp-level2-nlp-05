@@ -1,88 +1,11 @@
-# Readme
+## Task 소개
 
-## pre-commit
-설치 및 세팅
-```
-pip install pre-commit
-touch .pre-commit-config.yaml
-```
+- **Open-Domain Question Answering(ODQA)** 는 주어지는 지문이 따로 존재하지 않고 사전에 구축 되어 있는 knowledge resource 에서 질문에 대답할 수 있는 문서를 찾아 다양한 종류의 질문에 대답하는 인공지능을 만드는 Task 입니다.
+![This is an image](./assets/odqa_picture.png)
 
-사용시
-git add로 staged된 파일에 대해서만 pre-commit 검사
-```
-git add your_files
-pre-commit run
-```
-
-## wandb-sweep
-wandb는 팀레포를 하나 파야할 것 같음
-```
-NUM=5
-wandb sweep --project our_project --entity our_entity ./config/sweep_config.yaml
-wandb agent --count $NUM out_id/our_project/sweepID
-```
-
-## Dense Passage Retriever
-<pre>
-<code>
-retriever
-├── dpr_trainer.py # p_encoder, q_encoder train하고 model 저장 및 dense vector의 faiss화 까지 진행
-├── dpr_retrieval.py # 기 저장된 faiss index를 load하고 retrieve, bulk_retrieve 가능
-├── dpr_model # encoder 모델 및 faiss index 저장 경로
-│   ├── p_encoder.pt
-│   ├── q_encoder.pt
-│   └── faiss_cluster.index
-├── config # dpr 훈련에 필요한 arguments
-│   └── dpr_arguments.py
-├── elastic_retrieval.py
-├── faiss_retrieval.py
-├── retrieval.py
-└── sparse_retrieval.py
-</code>
-</pre>
-</br>
-
-* to-do
-- [x] dpr trainer, retriever 구현
-- [x] dense vector faiss index로 저장
-- [ ] dpr + bm25 미구현
-- [ ] 하이퍼 파라미터 서칭
-- [ ] run_mrc predict에서 아직 dpr 불러오는 기능은 미구현
-- [ ] 그리고 성능 안나옴 이상한 document만 불러와짐
-
-## 소개
-
-P stage 3 대회를 위한 베이스라인 코드 
-
-## 설치 방법
-
-### 요구 사항
-
-```
-# data (51.2 MB)
-tar -xzf data.tar.gz
-
-# 필요한 파이썬 패키지 설치. 
-bash ./install/install_requirements.sh
-```
-
-## 파일 구성
-
-
-### 저장소 구조
-
-```bash
-./assets/                # readme 에 필요한 이미지 저장
-./install/               # 요구사항 설치 파일 
-./data/                  # 전체 데이터. 아래 상세 설명
-retrieval.py             # sparse retreiver 모듈 제공 
-arguments.py             # 실행되는 모든 argument가 dataclass 의 형태로 저장되어있음
-trainer_qa.py            # MRC 모델 학습에 필요한 trainer 제공
-utils_qa.py              # 기타 유틸 함수 제공 및 조사 후처리
-
-train.py                 # MRC, Retrieval 모델 학습 및 평가 
-inference.py		     # ODQA 모델 평가 또는 제출 파일 (predictions.json) 생성
-```
+- 평가 방법
+    - **Exact Match(EM)** : 모델의 예측과 실제 답이 정확하게 일치할 때만 점수가 주어짐
+    - **F1-Score** : EM과 다르게 겹치는 단어도 있는 것을 고려해 부분 점수를 받음
 
 ## 데이터 소개
 
@@ -101,81 +24,70 @@ inference.py		     # ODQA 모델 평가 또는 제출 파일 (predictions.json) 
 
 data에 대한 argument 는 `arguments.py` 의 `DataTrainingArguments` 에서 확인 가능합니다. 
 
-# 훈련, 평가, 추론
+## Pre-train
+Salient Span Masking(SSM) 은 REALM에서 제시된 pretraining방법으로 인물, 날짜, 장소, 수량과 같을 Named Entity를 Masking하여 모델이 QA task에 적합한 world knowledge를 더 잘 학습할 수 있도록 한다.
+details : [링크](./ssm/README.md)
 
-### Train
+## Reader
 
-만약 arguments 에 대한 세팅을 직접하고 싶다면 `arguments.py` 를 참고해주세요. 
+### CNN Layer
+ CNN은 토큰의 지역적인 특징을 반영할 수 있다. 이를 이용하여, 모델이 좀더 제대로 위치를 예측할 수 있도록 CNN 을 모델 끝에 추가함.
+  ![This is an image](./assets/1dconvnet.png)
+ 
+### Curriculum Learning
+Curriculum Learning에서는 데이터의 난이도에 따라 데이터 종류를 상/중/하로 나누고  난이도 하, 난이도 중, 난이도 상 순서로 데이터를 학습함.
+* klue/roberta-large로 1차 inference를 진행하여 train dataset에 대한 예측값을 계산
+* start_index와 end_index 예측값에 대해 각각 L2 Loss를 계산 하여 산출된 Loss를 기준으로 각각의 훈련 데이터에 대해 난이도를 선정
 
-roberta 모델을 사용할 경우 tokenizer 사용시 아래 함수의 옵션을 수정해야합니다.
-베이스라인은 klue/bert-base로 진행되니 이 부분의 주석을 해제하여 사용해주세요 ! 
-tokenizer는 train, validation (train.py), test(inference.py) 전처리를 위해 호출되어 사용됩니다.
-(tokenizer의 return_token_type_ids=False로 설정해주어야 함)
+## Retriver
 
-```python
-# train.py
-def prepare_train_features(examples):
-        # truncation과 padding(length가 짧을때만)을 통해 toknization을 진행하며, stride를 이용하여 overflow를 유지합니다.
-        # 각 example들은 이전의 context와 조금씩 겹치게됩니다.
-        tokenized_examples = tokenizer(
-            examples[question_column_name if pad_on_right else context_column_name],
-            examples[context_column_name if pad_on_right else question_column_name],
-            truncation="only_second" if pad_on_right else "only_first",
-            max_length=max_seq_length,
-            stride=data_args.doc_stride,
-            return_overflowing_tokens=True,
-            return_offsets_mapping=True,
-            # return_token_type_ids=False, # roberta모델을 사용할 경우 False, bert를 사용할 경우 True로 표기해야합니다.
-            padding="max_length" if data_args.pad_to_max_length else False,
-        )
+### Sparse Retriever
+Sparse Retriever는 Elastic Search를 사용
+
+* 설치방법
+```
+bash ./elastic_search_install.sh
+```
+* Basic setting (상세사항은 ./retriever/setting.json 참조)
+```
+filter : shingle
+tokenizer : nori_tokenizer
+decompound_mode : mixed
+similarity : BM25
 ```
 
-```bash
-# 학습 예시 (train_dataset 사용)
-python train.py --output_dir ./models --do_train
+### Dense Retriever
+Encoder 모델로 encoding한 query, passage의 representation을 dot_product하여 나온 값으로 query와 passage의 유사도를 학습시킴
+* in-batch-negative, in-batch-negative + hard-negative 방법을 이용
+![데이터 분포](./assets/hard_negative.png)
+
+## Post processing
+
 ```
-
-### Eval
-
-MRC 모델의 평가는(`--do_eval`) 따로 설정해야 합니다.  위 학습 예시에 단순히 `--do_eval` 을 추가로 입력해서 훈련 및 평가를 동시에 진행할 수도 있습니다.
-
-```bash
-# mrc 모델 평가 (train_dataset 사용)
-python train.py --output_dir ./models/{model_dir} --model_name_or_path ./models/{model_dir} --do_eval 
+bash ./konlpy_install.sh
 ```
-
-### Inference
-
-retrieval 과 mrc 모델의 학습이 완료되면 `inference.py` 를 이용해 odqa 를 진행할 수 있습니다.
-
-* 학습한 모델의  test_dataset에 대한 결과를 제출하기 위해선 추론(`--do_predict`)만 진행하면 됩니다. 
-
-* 학습한 모델이 train_dataset 대해서 ODQA 성능이 어떻게 나오는지 알고 싶다면 평가(`--do_eval`)를 진행하면 됩니다.
-
-```bash
-# ODQA 실행 (test_dataset 사용)
-# wandb 가 로그인 되어있다면 자동으로 결과가 wandb 에 저장됩니다. 아니면 단순히 출력됩니다
-python inference.py --output_dir ./outputs/test_dataset/ --dataset_name ../data/test_dataset/ --model_name_or_path ./models/train_dataset/ --do_predict
-```
-
-### Post processing
 
 모델이 출력한 예측값에 konlpy 라이브러리를 적용하여 형태소 분석을 합니다.
 
-* Mecab, Hannanum, Okt 형태소 분석기를 사용해 예측값의 형태소를 출력합니다.
+Mecab, Hannanum, Okt 형태소 분석기를 사용해 예측값의 형태소를 출력합니다.
 
-* 3가지 분석기 중에 Okt를 포함한 2가지 이상 분석기에서 예측값이 조사로 끝나는 것으로 나타난 경우엔 해당 조사를 제거합니다.
+3가지 분석기 중에 Okt를 포함한 2가지 이상 분석기에서 예측값이 조사로 끝나는 것으로 나타난 경우엔 해당 조사를 제거합니다.
 
-* 조사가 제거된 예측 결과는 `--output_dir` 위치에 `predictions_post.json` 파일로 저장됩니다.
+조사가 제거된 예측 결과는 --output_dir 위치에 predictions_post.json 파일로 저장됩니다.
 
+## How to run
+
+### train
+```
+python train.py --config base_config
+```
 ### How to submit
+inference.py 파일을 위 예시처럼 --do_predict 으로 실행하면 --output_dir 위치에 predictions.json 와 predictions_post.json 라는 파일이 생성됩니다. 해당 파일을 제출해주시면 됩니다.
 
-`inference.py` 파일을 위 예시처럼 `--do_predict` 으로 실행하면 `--output_dir` 위치에 `predictions.json` 와 `predictions_post.json` 라는 파일이 생성됩니다. 해당 파일을 제출해주시면 됩니다.
+## Competition Score
+|Rank|EM|F1_score|
+|------------------|-----------------------|-------|
+|***5***|65.56|77.25|
 
-## Things to know
+Reports : [링크](./assets/NLP5조_MRC_랩업_리포트.pdf)
 
-1. `train.py` 에서 sparse embedding 을 훈련하고 저장하는 과정은 시간이 오래 걸리지 않아 따로 argument 의 default 가 True로 설정되어 있습니다. 실행 후 sparse_embedding.bin 과 tfidfv.bin 이 저장이 됩니다. **만약 sparse retrieval 관련 코드를 수정한다면, 꼭 두 파일을 지우고 다시 실행해주세요!** 안그러면 기존 파일이 load 됩니다.
-
-2. 모델의 경우 `--overwrite_cache` 를 추가하지 않으면 같은 폴더에 저장되지 않습니다. 
-
-3. `./outputs/` 폴더 또한 `--overwrite_output_dir` 을 추가하지 않으면 같은 폴더에 저장되지 않습니다.

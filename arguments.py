@@ -12,7 +12,7 @@ class ModelArguments:
     """
 
     model_name_or_path: str = field(
-        default="klue/bert-base",
+        default="klue/roberta-large",
         metadata={
             "help": "Path to pretrained model or model identifier from huggingface.co/models"
         },
@@ -117,7 +117,7 @@ class TrainingArguments(TrainingArguments):
     )
 
     save_total_limit: int = field(
-        default=2, metadata={"help": "limitation of number of saved file"}
+        default=1, metadata={"help": "limitation of number of saved file"}
     )
 
     load_best_model_at_end: bool = field(
@@ -127,11 +127,15 @@ class TrainingArguments(TrainingArguments):
     num_train_epochs: int = field(default=2, metadata={"help": "Train epochs"})
 
     evaluation_strategy: str = field(
-        default="epoch", metadata={"help": "evaluation strategy"}
+        default="steps", metadata={"help": "evaluation strategy"}
     )
 
     logging_steps: int = field(default=20, metadata={"help": "logging steps"})
 
+    eval_steps: int = field(
+        default=200, metadata={"help":"evaludation steps"}
+    )
+    
     overwrite_output_dir: bool = field(
         default=True,
         metadata={"help": "Whether overwrite output_dir when output_dir already exist"},

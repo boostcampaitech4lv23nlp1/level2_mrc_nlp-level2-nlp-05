@@ -8,7 +8,7 @@ from typing import List, NoReturn, Optional, Tuple, Union
 import faiss
 import numpy as np
 import pandas as pd
-from datasets import Dataset, concatenate_datasets, load_from_disk
+from datasets import Dataset, concatenate_datasets, load_from_disk, load_dataset
 from sklearn.feature_extraction.text import TfidfVectorizer
 from tqdm.auto import tqdm
 from sparse_retrieval import SparseRetrieval
@@ -24,6 +24,10 @@ def timer(name):
 
 
 if __name__ == "__main__":
+
+    """
+    각각의 Retriver의 성능을 비교하기 위한 코드입니다.
+    """
 
     import argparse
 
@@ -88,9 +92,7 @@ if __name__ == "__main__":
 
     elif args.retriever_type == "elastic":
         print("init elastic...")
-        retriever = ElasticRetrieval(
-            tokenize_fn=tokenizer.tokenize, index_name="origin-wiki-multi"
-        )
+        retriever = ElasticRetrieval(index_name="origin-wiki-multi")
 
         with timer("single query by elastic search"):
             scores, indices = retriever.retrieve(query)
@@ -103,7 +105,6 @@ if __name__ == "__main__":
                 df["correct"].sum() / len(df),
             )
             df.to_csv("elastic.csv")
-            # 0.57490458015267186 점
 
     else:
         retriever = SparseRetrieval(
@@ -122,4 +123,4 @@ if __name__ == "__main__":
             print(
                 "correct retrieval result by exhaustive search",
                 df["correct"].sum() / len(df),
-            )  # 0.25190839694656486 점
+            )

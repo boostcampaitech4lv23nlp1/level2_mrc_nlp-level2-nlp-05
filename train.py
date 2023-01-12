@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+import torch
 from datetime import datetime
 from typing import NoReturn
 import argparse
@@ -26,6 +27,12 @@ from run_mrc import run_mrc
 from run_sparse_retrieval import run_sparse_retrieval
 from omegaconf import OmegaConf
 
+from reader.cnn import (
+    Conv1DRobertaForQuestionAnswering,
+    Conv1DDebertaV2ForQuestionAnswering,
+    Conv1DElectraForQuestionAnswering,
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -34,11 +41,10 @@ def main(model_args, data_args, training_args):
     # Redefine training arguments
     training_args = TrainingArguments(**training_args)
 
+    # Set output_dir name with current time
     now = datetime.now()
     train_start_time = now.strftime("%d-%H-%M")
-    training_args.output_dir = os.path.join(
-        training_args.output_dir, f"{train_start_time}"
-    )
+    training_args.output_dir = os.path.join(training_args.output_dir, f"{train_start_time}")
 
     # Set Loggin & verbosity
     logging.basicConfig(
@@ -56,21 +62,27 @@ def main(model_args, data_args, training_args):
 
     # AutoConfig, Autotokenizer, AutoModel
     config = AutoConfig.from_pretrained(
-        model_args.config_name
-        if model_args.config_name is not None
-        else model_args.model_name_or_path,
+        model_args.config_name if model_args.config_name is not None else model_args.model_name_or_path,
     )
     tokenizer = AutoTokenizer.from_pretrained(
-        model_args.tokenizer_name
-        if model_args.tokenizer_name is not None
-        else model_args.model_name_or_path,
+        model_args.tokenizer_name if model_args.tokenizer_name is not None else model_args.model_name_or_path,
         use_fast=True,
     )
+
+    # model = model_selector()
+
     model = AutoModelForQuestionAnswering.from_pretrained(
         model_args.model_name_or_path,
         from_tf=bool(".ckpt" in model_args.model_name_or_path),
         config=config,
     )
+
+    """
+    model = Conv1DRobertaForQuestionAnswering(
+        model_args.model_name_or_path,
+        config=config,
+    )
+    """
 
     # print training configuration
     print(f"model is from {model_args.model_name_or_path}")
@@ -80,6 +92,7 @@ def main(model_args, data_args, training_args):
     print("train:", training_args.do_train)
     print("eval:", training_args.do_eval)
     print("predict:", training_args.do_predict)
+
     # do_train mrc model 혹은 do_eval mrc model
     if training_args.do_train or training_args.do_eval or training_args.do_predict:
         print("run_mrc...")
