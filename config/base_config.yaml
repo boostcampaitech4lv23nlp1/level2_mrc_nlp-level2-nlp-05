@@ -1,9 +1,9 @@
 model_args:
-  model_name_or_path : 'klue/roberta-small'
-  retrieval_model_name: 'klue/roberta-small' # Sparse : 'klue/roberta-large' | DPR : 'klue/bert-base'
+  model_name_or_path : 'klue/roberta-large'
+  retrieval_model_name: 'klue/roberta-large' # Sparse : 'klue/roberta-large' | DPR : 'klue/bert-base'
   indexer_path:
   config_name: 
-  tokenizer_name: 'klue/roberta-small'
+  tokenizer_name: 'klue/roberta-large'
   cnn_class_name:
   cnn_pretrain_model_path: 
 
