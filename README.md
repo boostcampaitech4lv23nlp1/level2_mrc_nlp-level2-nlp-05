@@ -36,8 +36,13 @@ details : [링크](./ssm/README.md)
  
 ### Curriculum Learning
 Curriculum Learning에서는 데이터의 난이도에 따라 데이터 종류를 상/중/하로 나누고  난이도 하, 난이도 중, 난이도 상 순서로 데이터를 학습함.
-* klue/roberta-large로 1차 inference를 진행하여 train dataset에 대한 예측값을 계산
-* start_index와 end_index 예측값에 대해 각각 L2 Loss를 계산 하여 산출된 Loss를 기준으로 각각의 훈련 데이터에 대해 난이도를 선정
+* klue/roberta-large로 train_dataset에 대해 1차 ference를 진행하여 train dataset에 대한 예측값(답의 시작 index, 끝 index)을 계산
+* start_index와 end_index 예측값에 대해 각각 L2 Loss를 계산 하여 산출된 Loss의 합을 기준으로 각각의 훈련 데이터에 대해 난이도 하를 선정. 이때 난이도 하 데이터 수가 전체의 1/3이 되도록 조정한다.
+* 난이도 하 데이터로 1차 학습을 진행
+* 1차 학습한 모델로 train_dataset에 대해 2차 inference를 진행하여 train dataset에 대한 예측값(답의 시작 index, 끝 index)을 계산
+* start_index와 end_index 예측값에 대해 각각 L2 Loss를 계산 하여 산출된 Loss의 합을 기준으로 각각의 훈련 데이터에 대해 난이도 중을 선정. 이때 난이도 중 데이터 수가 전체의 1/3이 되도록 조정한다.
+* 난이도 하와 중을 제외한 나머지 데이터를 난이도 상 데이터로 지정하낟.
+* 난이도 중, 상 순서로 모델을 학습한다.
 
 ## Retrieval
 
