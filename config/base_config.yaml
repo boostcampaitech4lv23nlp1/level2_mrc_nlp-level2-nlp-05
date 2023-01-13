@@ -4,6 +4,8 @@ model_args:
   indexer_path:
   config_name: 
   tokenizer_name: 'klue/roberta-large'
+  cnn_class_name:
+  cnn_pretrain_model_path: 
 
 data_args:
   dataset_name: './dataset/train_dataset'
